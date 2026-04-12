@@ -1,0 +1,105 @@
+import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
+import {
+  parts,
+  brands,
+  cabinetCodes,
+} from "@/lib/db/schema/vendor";
+
+export interface PartRow {
+  id: string;
+  name: string;
+  brandId: string | null;
+  brandName: string | null;
+  partNumber: string | null;
+  partCode: string | null;
+  description: string | null;
+  cabinetCodeId: string | null;
+  cabinetCode: string | null;
+  criticalCount: number;
+  includeCritical: boolean;
+  currentStock: number;
+  latestPrice: number | null;
+  createdAt: string | null;
+}
+
+export interface BrandOption {
+  id: string;
+  name: string;
+}
+
+export interface CabinetCodeOption {
+  id: string;
+  code: string;
+}
+
+export async function getParts(): Promise<PartRow[]> {
+  const rows = await db.execute(sql`
+    SELECT
+      p.id,
+      p.name,
+      p.brand_id        AS "brandId",
+      b.name            AS "brandName",
+      p.part_number      AS "partNumber",
+      p.part_code        AS "partCode",
+      p.description,
+      p.cabinet_code_id  AS "cabinetCodeId",
+      cc.code            AS "cabinetCode",
+      COALESCE(p.critical_count, 0)   AS "criticalCount",
+      COALESCE(p.include_critical, false) AS "includeCritical",
+      COALESCE(stock.current_stock, 0) AS "currentStock",
+      latest_price.price AS "latestPrice",
+      p.created_at       AS "createdAt"
+    FROM parts p
+    LEFT JOIN brands b ON b.id = p.brand_id
+    LEFT JOIN cabinet_codes cc ON cc.id = p.cabinet_code_id
+    LEFT JOIN LATERAL (
+      SELECT COALESCE(SUM(
+        CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END
+      ), 0) AS current_stock
+      FROM inventory_log il
+      WHERE il.part_id = p.id
+    ) stock ON true
+    LEFT JOIN LATERAL (
+      SELECT pp.price
+      FROM parts_prices pp
+      WHERE pp.part_id = p.id
+      ORDER BY pp.date DESC NULLS LAST
+      LIMIT 1
+    ) latest_price ON true
+    ORDER BY p.name ASC
+  `);
+
+  return (rows as unknown as any[]).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    brandId: r.brandId,
+    brandName: r.brandName,
+    partNumber: r.partNumber,
+    partCode: r.partCode,
+    description: r.description,
+    cabinetCodeId: r.cabinetCodeId,
+    cabinetCode: r.cabinetCode,
+    criticalCount: Number(r.criticalCount),
+    includeCritical: Boolean(r.includeCritical),
+    currentStock: Number(r.currentStock),
+    latestPrice: r.latestPrice ? Number(r.latestPrice) : null,
+    createdAt: r.createdAt ? String(r.createdAt) : null,
+  }));
+}
+
+export async function getBrandsForFilter(): Promise<BrandOption[]> {
+  const rows = await db
+    .select({ id: brands.id, name: brands.name })
+    .from(brands)
+    .orderBy(brands.name);
+  return rows;
+}
+
+export async function getCabinetCodes(): Promise<CabinetCodeOption[]> {
+  const rows = await db
+    .select({ id: cabinetCodes.id, code: cabinetCodes.code })
+    .from(cabinetCodes)
+    .orderBy(cabinetCodes.code);
+  return rows;
+}

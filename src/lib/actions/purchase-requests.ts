@@ -1,0 +1,246 @@
+"use server";
+
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { purchaseRequests, prLines } from "@/lib/db/schema/vendor";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+
+// ── Schemas ──
+
+const prSchema = z.object({
+  prNumber: z.string().min(1, "PR number is required"),
+  date: z.string().optional(),
+  statusId: z.coerce.number().int().optional(),
+  label: z.string().optional(),
+  comment: z.string().optional(),
+});
+
+const prLineSchema = z.object({
+  partId: z.string().uuid().optional().or(z.literal("")),
+  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1"),
+  unitPrice: z.coerce.number().min(0).optional(),
+  targetPrice: z.coerce.number().min(0).optional(),
+  statusId: z.coerce.number().int().optional(),
+  comment: z.string().optional(),
+  link: z.string().optional(),
+  supplierId: z.string().uuid().optional().or(z.literal("")),
+});
+
+export type PrFormState = {
+  error?: string;
+  success?: boolean;
+  prId?: string;
+};
+
+// ── Purchase Request CRUD ──
+
+export async function createPurchaseRequest(
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = prSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+
+  const data = parsed.data;
+
+  try {
+    const result = await db
+      .insert(purchaseRequests)
+      .values({
+        prNumber: data.prNumber,
+        date: data.date ? new Date(data.date) : new Date(),
+        statusId: data.statusId || 1, // Default to "New"
+        label: data.label || null,
+        comment: data.comment || null,
+      })
+      .returning({ id: purchaseRequests.id });
+
+    revalidatePath("/dashboard/purchase-requests");
+    revalidatePath("/dashboard");
+    return { success: true, prId: result[0]?.id };
+  } catch (e: any) {
+    return { error: e.message || "Failed to create purchase request" };
+  }
+}
+
+export async function updatePurchaseRequest(
+  id: string,
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = prSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+
+  const data = parsed.data;
+
+  try {
+    await db
+      .update(purchaseRequests)
+      .set({
+        date: data.date ? new Date(data.date) : undefined,
+        statusId: data.statusId || undefined,
+        label: data.label || null,
+        comment: data.comment || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(purchaseRequests.id, id));
+  } catch (e: any) {
+    return { error: e.message || "Failed to update purchase request" };
+  }
+
+  revalidatePath("/dashboard/purchase-requests");
+  revalidatePath(`/dashboard/purchase-requests/${id}`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function updatePrStatus(
+  id: string,
+  statusId: number
+): Promise<PrFormState> {
+  try {
+    await db
+      .update(purchaseRequests)
+      .set({ statusId, updatedAt: new Date() })
+      .where(eq(purchaseRequests.id, id));
+  } catch (e: any) {
+    return { error: e.message || "Failed to update status" };
+  }
+
+  revalidatePath("/dashboard/purchase-requests");
+  revalidatePath(`/dashboard/purchase-requests/${id}`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function deletePurchaseRequest(
+  id: string
+): Promise<PrFormState> {
+  try {
+    await db.delete(purchaseRequests).where(eq(purchaseRequests.id, id));
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete purchase request" };
+  }
+
+  revalidatePath("/dashboard/purchase-requests");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// ── Line Items CRUD ──
+
+export async function addPrLine(
+  prId: string,
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = prLineSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+
+  const data = parsed.data;
+  const qty = data.quantity;
+  const price = data.unitPrice ?? 0;
+  const target = data.targetPrice ?? 0;
+  const total = qty * price;
+  const totalTarget = qty * target;
+  const profit = totalTarget - total;
+
+  try {
+    await db.insert(prLines).values({
+      prId,
+      partId: data.partId || null,
+      quantity: qty,
+      unitPrice: price.toFixed(2),
+      totalPrice: total.toFixed(2),
+      targetPrice: target > 0 ? target.toFixed(2) : null,
+      totalTargetPrice: target > 0 ? totalTarget.toFixed(2) : null,
+      projectedProfit: target > 0 ? profit.toFixed(2) : null,
+      statusId: data.statusId || 1,
+      comment: data.comment || null,
+      link: data.link || null,
+      supplierId: data.supplierId || null,
+    });
+  } catch (e: any) {
+    return { error: e.message || "Failed to add line item" };
+  }
+
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  revalidatePath("/dashboard/purchase-requests");
+  return { success: true };
+}
+
+export async function updatePrLine(
+  lineId: string,
+  prId: string,
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = prLineSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+
+  const data = parsed.data;
+  const qty = data.quantity;
+  const price = data.unitPrice ?? 0;
+  const target = data.targetPrice ?? 0;
+  const total = qty * price;
+  const totalTarget = qty * target;
+  const profit = totalTarget - total;
+
+  try {
+    await db
+      .update(prLines)
+      .set({
+        partId: data.partId || null,
+        quantity: qty,
+        unitPrice: price.toFixed(2),
+        totalPrice: total.toFixed(2),
+        targetPrice: target > 0 ? target.toFixed(2) : null,
+        totalTargetPrice: target > 0 ? totalTarget.toFixed(2) : null,
+        projectedProfit: target > 0 ? profit.toFixed(2) : null,
+        statusId: data.statusId || undefined,
+        comment: data.comment || null,
+        link: data.link || null,
+        supplierId: data.supplierId || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(prLines.id, lineId));
+  } catch (e: any) {
+    return { error: e.message || "Failed to update line item" };
+  }
+
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  revalidatePath("/dashboard/purchase-requests");
+  return { success: true };
+}
+
+export async function deletePrLine(
+  lineId: string,
+  prId: string
+): Promise<PrFormState> {
+  try {
+    await db.delete(prLines).where(eq(prLines.id, lineId));
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete line item" };
+  }
+
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  revalidatePath("/dashboard/purchase-requests");
+  return { success: true };
+}
