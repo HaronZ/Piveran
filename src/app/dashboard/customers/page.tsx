@@ -1,16 +1,24 @@
-import { ComingSoonPage } from "@/components/coming-soon-page";
-import { Users } from "lucide-react";
-
-export const metadata = {
-  title: "Customers | Sir Keith Auto Parts & Garage",
-};
+import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
+import { DataTableSkeleton } from "@/components/data-table-skeleton";
+import { CustomersTable } from "@/components/customers-table";
+import { getCustomers } from "@/lib/db/queries/customers";
 
 export default function CustomersPage() {
   return (
-    <ComingSoonPage
-      title="Customers"
-      description="Manage customer profiles and contact information."
-      icon={<Users className="h-10 w-10 text-amber-500" />}
-    />
+    <div className="space-y-6">
+      <PageHeader
+        title="Customers"
+        description="Manage your customer database"
+      />
+      <Suspense fallback={<DataTableSkeleton />}>
+        <CustomersData />
+      </Suspense>
+    </div>
   );
+}
+
+async function CustomersData() {
+  const customers = await getCustomers();
+  return <CustomersTable customers={customers} />;
 }
