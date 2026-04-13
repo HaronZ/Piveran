@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -168,17 +167,8 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
     (p) => p.includeCritical && p.criticalCount > 0 && p.currentStock <= p.criticalCount
   ).length;
 
-  // One-time low-stock warning toast
-  const toastFired = useRef(false);
-  useEffect(() => {
-    if (lowStockCount > 0 && !toastFired.current) {
-      toastFired.current = true;
-      toast.warning(
-        `${lowStockCount} part${lowStockCount > 1 ? "s" : ""} at or below critical stock level`,
-        { duration: 5000 }
-      );
-    }
-  }, [lowStockCount]);
+
+
 
   return (
     <TooltipProvider>
