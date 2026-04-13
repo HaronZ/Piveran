@@ -36,59 +36,46 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  // Batch 1: Simple counts (lightweight queries)
-  const [
-    partsCount,
-    customersCount,
-    carsCount,
-    vendorsCount,
-    totalJOsResult,
-  ] = await Promise.all([
-    db.select({ value: count() }).from(parts),
-    db.select({ value: count() }).from(customers),
-    db.select({ value: count() }).from(cars),
-    db.select({ value: count() }).from(vendors),
-    db.select({ value: count() }).from(jobOrders),
-  ]);
+  const empty: DashboardData = {
+    totalParts: 0, totalCustomers: 0, totalCars: 0,
+    activeJOs: 0, pendingPaymentJOs: 0, completedJOs: 0, cancelledJOs: 0,
+    totalVendors: 0, pendingPRs: 0, waitingDeliveryPRs: 0, totalJOs: 0,
+    inventoryCurrentValue: null, inventoryValueDate: null,
+    totalRevenue: 0, lowStockParts: [], waitingDeliveryPRNames: [],
+    monthlyRevenue: [], joStatusBreakdown: [], topBrands: [],
+  };
 
-  // Batch 2: Filtered counts + aggregations
-  const [
-    activeJOsResult,
-    pendingPaymentJOsResult,
-    completedJOsResult,
-    cancelledJOsResult,
-    pendingPRsResult,
-    waitingDeliveryPRsResult,
-    revenueResult,
-  ] = await Promise.all([
-    db.select({ value: count() }).from(jobOrders)
-      .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5))),
-    db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 6)),
-    db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 7)),
-    db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 8)),
-    db.select({ value: count() }).from(purchaseRequests)
-      .where(and(gte(purchaseRequests.statusId, 1), lte(purchaseRequests.statusId, 6))),
-    db.select({ value: count() }).from(purchaseRequests)
-      .where(eq(purchaseRequests.statusId, 5)),
-    db.select({ total: sum(joPayments.amountPaid) }).from(joPayments),
-  ]);
+  try {
+    // Run queries sequentially to avoid Supabase connection pool exhaustion
+    const partsCount = await db.select({ value: count() }).from(parts);
+    const customersCount = await db.select({ value: count() }).from(customers);
+    const carsCount = await db.select({ value: count() }).from(cars);
+    const vendorsCount = await db.select({ value: count() }).from(vendors);
+    const totalJOsResult = await db.select({ value: count() }).from(jobOrders);
 
-  // Batch 3: Complex queries (raw SQL)
-  const [
-    invValue,
-    lowStockResult,
-    waitingPRNamesResult,
-    monthlyRevenueResult,
-    topBrandsResult,
-  ] = await Promise.all([
-    db.select({ value: inventoryValue.currentValue, date: inventoryValue.date })
+    const activeJOsResult = await db.select({ value: count() }).from(jobOrders)
+      .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5)));
+    const pendingPaymentJOsResult = await db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 6));
+    const completedJOsResult = await db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 7));
+    const cancelledJOsResult = await db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 8));
+
+    const pendingPRsResult = await db.select({ value: count() }).from(purchaseRequests)
+      .where(and(gte(purchaseRequests.statusId, 1), lte(purchaseRequests.statusId, 6)));
+    const waitingDeliveryPRsResult = await db.select({ value: count() }).from(purchaseRequests)
+      .where(eq(purchaseRequests.statusId, 5));
+
+    const revenueResult = await db.select({ total: sum(joPayments.amountPaid) }).from(joPayments);
+
+    const invValue = await db
+      .select({ value: inventoryValue.currentValue, date: inventoryValue.date })
       .from(inventoryValue)
       .orderBy(sql`${inventoryValue.date} DESC NULLS LAST`)
-      .limit(1),
-    db.execute(sql`
+      .limit(1);
+
+    const lowStockResult = await db.execute(sql`
       SELECT p.name, 
              COALESCE(SUM(CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END), 0) as current_stock,
              COALESCE(p.critical_count, 0) as critical_count
@@ -99,12 +86,15 @@ export async function getDashboardData(): Promise<DashboardData> {
       HAVING COALESCE(SUM(CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END), 0) <= p.critical_count
       ORDER BY current_stock ASC
       LIMIT 10
-    `),
-    db.select({ prNumber: purchaseRequests.prNumber })
+    `);
+
+    const waitingPRNamesResult = await db
+      .select({ prNumber: purchaseRequests.prNumber })
       .from(purchaseRequests)
       .where(eq(purchaseRequests.statusId, 5))
-      .limit(5),
-    db.execute(sql`
+      .limit(5);
+
+    const monthlyRevenueResult = await db.execute(sql`
       SELECT TO_CHAR(date_trunc('month', jp.date_paid), 'Mon') as month,
              EXTRACT(MONTH FROM date_trunc('month', jp.date_paid)) as month_num,
              EXTRACT(YEAR FROM date_trunc('month', jp.date_paid)) as year_num,
@@ -114,70 +104,57 @@ export async function getDashboardData(): Promise<DashboardData> {
       GROUP BY date_trunc('month', jp.date_paid)
       ORDER BY year_num DESC, month_num DESC
       LIMIT 6
-    `),
-    db.execute(sql`
+    `);
+
+    const topBrandsResult = await db.execute(sql`
       SELECT b.name, COUNT(p.id) as part_count
       FROM brands b
       JOIN parts p ON p.brand_id = b.id
       GROUP BY b.id, b.name
       ORDER BY part_count DESC
       LIMIT 5
-    `),
-  ]);
+    `);
 
-  const activeJOs = activeJOsResult[0]?.value ?? 0;
-  const pendingPaymentJOs = pendingPaymentJOsResult[0]?.value ?? 0;
-  const completedJOs = completedJOsResult[0]?.value ?? 0;
-  const cancelledJOs = cancelledJOsResult[0]?.value ?? 0;
+    const activeJOs = activeJOsResult[0]?.value ?? 0;
+    const pendingPaymentJOs = pendingPaymentJOsResult[0]?.value ?? 0;
+    const completedJOs = completedJOsResult[0]?.value ?? 0;
+    const cancelledJOs = cancelledJOsResult[0]?.value ?? 0;
 
-  // Build JO status breakdown for pie chart
-  const joStatusBreakdown = [
-    { status: "Active", count: activeJOs, color: "#f59e0b" },
-    { status: "Pending Payment", count: pendingPaymentJOs, color: "#3b82f6" },
-    { status: "Completed", count: completedJOs, color: "#22c55e" },
-    { status: "Cancelled", count: cancelledJOs, color: "#ef4444" },
-  ].filter((s) => s.count > 0);
+    const joStatusBreakdown = [
+      { status: "Active", count: activeJOs, color: "#f59e0b" },
+      { status: "Pending Payment", count: pendingPaymentJOs, color: "#3b82f6" },
+      { status: "Completed", count: completedJOs, color: "#22c55e" },
+      { status: "Cancelled", count: cancelledJOs, color: "#ef4444" },
+    ].filter((s) => s.count > 0);
 
-  // Monthly revenue data (reversed so oldest first for chart)
-  const monthlyRevenue = (monthlyRevenueResult as unknown as any[])
-    .map((r: any) => ({
-      month: r.month,
-      revenue: Number(r.revenue),
-    }))
-    .reverse();
+    const monthlyRevenue = (monthlyRevenueResult as unknown as any[])
+      .map((r: any) => ({ month: r.month, revenue: Number(r.revenue) }))
+      .reverse();
 
-  const topBrands = (topBrandsResult as unknown as any[]).map((r: any) => ({
-    name: r.name,
-    count: Number(r.part_count),
-  }));
+    const topBrands = (topBrandsResult as unknown as any[]).map((r: any) => ({
+      name: r.name, count: Number(r.part_count),
+    }));
 
-  return {
-    totalParts: partsCount[0]?.value ?? 0,
-    totalCustomers: customersCount[0]?.value ?? 0,
-    totalCars: carsCount[0]?.value ?? 0,
-    activeJOs,
-    pendingPaymentJOs,
-    completedJOs,
-    cancelledJOs,
-    totalVendors: vendorsCount[0]?.value ?? 0,
-    pendingPRs: pendingPRsResult[0]?.value ?? 0,
-    waitingDeliveryPRs: waitingDeliveryPRsResult[0]?.value ?? 0,
-    totalJOs: totalJOsResult[0]?.value ?? 0,
-    inventoryCurrentValue: invValue[0]?.value
-      ? Number(invValue[0].value)
-      : null,
-    inventoryValueDate: invValue[0]?.date ?? null,
-    totalRevenue: revenueResult[0]?.total
-      ? Number(revenueResult[0].total)
-      : 0,
-    lowStockParts: (lowStockResult as unknown as any[]).map((r: any) => ({
-      name: r.name,
-      stock: Number(r.current_stock),
-      critical: Number(r.critical_count),
-    })),
-    waitingDeliveryPRNames: waitingPRNamesResult.map((r) => r.prNumber),
-    monthlyRevenue,
-    joStatusBreakdown,
-    topBrands,
-  };
+    return {
+      totalParts: partsCount[0]?.value ?? 0,
+      totalCustomers: customersCount[0]?.value ?? 0,
+      totalCars: carsCount[0]?.value ?? 0,
+      activeJOs, pendingPaymentJOs, completedJOs, cancelledJOs,
+      totalVendors: vendorsCount[0]?.value ?? 0,
+      pendingPRs: pendingPRsResult[0]?.value ?? 0,
+      waitingDeliveryPRs: waitingDeliveryPRsResult[0]?.value ?? 0,
+      totalJOs: totalJOsResult[0]?.value ?? 0,
+      inventoryCurrentValue: invValue[0]?.value ? Number(invValue[0].value) : null,
+      inventoryValueDate: invValue[0]?.date ?? null,
+      totalRevenue: revenueResult[0]?.total ? Number(revenueResult[0].total) : 0,
+      lowStockParts: (lowStockResult as unknown as any[]).map((r: any) => ({
+        name: r.name, stock: Number(r.current_stock), critical: Number(r.critical_count),
+      })),
+      waitingDeliveryPRNames: waitingPRNamesResult.map((r) => r.prNumber),
+      monthlyRevenue, joStatusBreakdown, topBrands,
+    };
+  } catch (err) {
+    console.error("[Dashboard] Failed to load data:", err);
+    return empty;
+  }
 }
