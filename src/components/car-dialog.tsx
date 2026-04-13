@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useState, useActionState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,13 @@ export function CarDialog({
   defaultOwnerId,
 }: CarDialogProps) {
   const isEdit = !!car;
+  const initialOwnerId = car?.ownerId || defaultOwnerId || "";
+  const [ownerId, setOwnerId] = useState(initialOwnerId);
+
+  // Reset state when dialog opens with different car
+  useEffect(() => {
+    setOwnerId(car?.ownerId || defaultOwnerId || "");
+  }, [car?.ownerId, defaultOwnerId, open]);
 
   const boundAction = car ? updateCar.bind(null, car.id) : createCar;
 
@@ -50,6 +57,8 @@ export function CarDialog({
       onOpenChange(false);
     }
   }, [state?.success, onOpenChange, isEdit]);
+
+  const selectedCustomerName = customers.find((c) => c.id === ownerId)?.name;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,15 +138,19 @@ export function CarDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="primaryOwnerId" className="text-xs">Owner</Label>
+            <Label className="text-xs">Owner</Label>
+            {/* Hidden input submits the UUID to the form */}
+            <input type="hidden" name="primaryOwnerId" value={ownerId} />
             <Select
-              name="primaryOwnerId"
-              defaultValue={car?.ownerId || defaultOwnerId || ""}
+              value={ownerId}
+              onValueChange={(val) => setOwnerId(val as string ?? "")}
             >
               <SelectTrigger className="border-border/40 bg-card/60">
-                <SelectValue placeholder="Select owner (optional)" />
+                <SelectValue placeholder="Select owner (optional)">
+                  {selectedCustomerName || "Select owner (optional)"}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
+              <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl max-h-[200px]">
                 {customers.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
