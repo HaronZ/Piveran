@@ -275,16 +275,18 @@ export function JobOrderDialog({
               <MessageSquare className="h-4 w-4" />
               Additional Details
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="discount" className="text-xs">Discount (₱)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="discount" className="text-xs">Discount (₱)</Label>
+              <div className="relative max-w-[200px]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm font-mono">₱</span>
                 <Input
                   id="discount"
                   name="discount"
                   type="number"
                   step="0.01"
+                  min="0"
                   defaultValue={jobOrder?.discount || ""}
-                  className="border-border/40 bg-card/60"
+                  className="border-border/40 bg-card/60 font-mono pl-7 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   placeholder="0.00"
                 />
               </div>
