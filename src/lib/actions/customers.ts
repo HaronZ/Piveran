@@ -144,3 +144,80 @@ export async function deleteCustomer(id: string): Promise<CustomerFormState> {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+// ─── Contact CRUD ───
+export async function addContact(
+  customerId: string,
+  contactNumber: string
+): Promise<CustomerFormState> {
+  if (!contactNumber.trim()) return { error: "Contact number is required" };
+  try {
+    await db.insert(customerContacts).values({
+      customerId,
+      contactNumber: contactNumber.trim(),
+    });
+  } catch (e: any) {
+    return { error: e.message || "Failed to add contact" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+export async function deleteContact(
+  id: string,
+  customerId: string
+): Promise<CustomerFormState> {
+  try {
+    await db.delete(customerContacts).where(eq(customerContacts.id, id));
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete contact" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+// ─── Address CRUD ───
+export async function addAddress(
+  customerId: string,
+  formData: FormData
+): Promise<CustomerFormState> {
+  const street = formData.get("street") as string || null;
+  const village = formData.get("village") as string || null;
+  const barangay = formData.get("barangay") as string || null;
+  const city = formData.get("city") as string || null;
+  const province = formData.get("province") as string || null;
+  const zipCode = formData.get("zipCode") as string || null;
+
+  if (!street && !barangay && !city && !province) {
+    return { error: "At least one address field is required" };
+  }
+
+  try {
+    await db.insert(customerAddresses).values({
+      customerId,
+      street,
+      village,
+      barangay,
+      city,
+      province,
+      zipCode,
+    });
+  } catch (e: any) {
+    return { error: e.message || "Failed to add address" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+export async function deleteAddress(
+  id: string,
+  customerId: string
+): Promise<CustomerFormState> {
+  try {
+    await db.delete(customerAddresses).where(eq(customerAddresses.id, id));
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete address" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
