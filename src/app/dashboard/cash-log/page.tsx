@@ -1,16 +1,36 @@
-import { ComingSoonPage } from "@/components/coming-soon-page";
-import { Wallet } from "lucide-react";
-
-export const metadata = {
-  title: "Cash Log | Sir Keith Auto Parts & Garage",
-};
+import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
+import { DataTableSkeleton } from "@/components/data-table-skeleton";
+import { CashLogTable } from "@/components/cash-log-table";
+import { getCashLog, getCashActions, getExpenseTypes, getOpexTypes } from "@/lib/db/queries/cash-log";
 
 export default function CashLogPage() {
   return (
-    <ComingSoonPage
-      title="Cash Log"
-      description="Track cash movements, expenses, and loan records."
-      icon={<Wallet className="h-10 w-10 text-amber-500" />}
+    <div className="space-y-6">
+      <PageHeader
+        title="Cash Log"
+        description="Track all cash transactions"
+      />
+      <Suspense fallback={<DataTableSkeleton />}>
+        <CashLogData />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CashLogData() {
+  const [entries, actions, expenseTypes, opexTypes] = await Promise.all([
+    getCashLog(),
+    getCashActions(),
+    getExpenseTypes(),
+    getOpexTypes(),
+  ]);
+  return (
+    <CashLogTable
+      entries={entries}
+      actions={actions}
+      expenseTypes={expenseTypes}
+      opexTypes={opexTypes}
     />
   );
 }
