@@ -38,15 +38,13 @@ export function JobOrderDialog({
 }: JobOrderDialogProps) {
   const isEdit = !!jobOrder;
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const [customerId, setCustomerId] = useState(jobOrder?.customerId || "");
   const [carId, setCarId] = useState(jobOrder?.carId || "");
   const [statusId, setStatusId] = useState(jobOrder?.statusId?.toString() || "");
-
-  useEffect(() => {
-    setCustomerId(jobOrder?.customerId || "");
-    setCarId(jobOrder?.carId || "");
-    setStatusId(jobOrder?.statusId?.toString() || "");
-  }, [jobOrder, open]);
+  const [checkinDate, setCheckinDate] = useState(toDateLocal(jobOrder?.checkinDate || null) || (isEdit ? "" : today));
+  const [checkoutDate, setCheckoutDate] = useState(toDateLocal(jobOrder?.checkoutDate || null) || "");
 
   const boundAction = jobOrder ? updateJobOrder.bind(null, jobOrder.id) : createJobOrder;
   const [state, formAction, isPending] = useActionState(boundAction, {});
@@ -80,7 +78,7 @@ export function JobOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] border-border/40 bg-card/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent key={`jo-${jobOrder?.id || "new"}`} className="sm:max-w-[560px] border-border/40 bg-card/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
@@ -235,9 +233,21 @@ export function JobOrderDialog({
                   id="checkinDate"
                   name="checkinDate"
                   type="date"
-                  defaultValue={toDateLocal(jobOrder?.checkinDate || null)}
+                  value={checkinDate}
+                  min={isEdit ? undefined : today}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCheckinDate(val);
+                    // If checkout is before new checkin, reset it
+                    if (checkoutDate && val && checkoutDate < val) {
+                      setCheckoutDate(val);
+                    }
+                  }}
                   className="border-border/40 bg-card/60"
                 />
+                {!isEdit && (
+                  <p className="text-[10px] text-muted-foreground">📅 Defaults to today</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="checkoutDate" className="text-xs">Check-out Date</Label>
@@ -245,9 +255,14 @@ export function JobOrderDialog({
                   id="checkoutDate"
                   name="checkoutDate"
                   type="date"
-                  defaultValue={toDateLocal(jobOrder?.checkoutDate || null)}
+                  value={checkoutDate}
+                  min={checkinDate || today}
+                  onChange={(e) => setCheckoutDate(e.target.value)}
                   className="border-border/40 bg-card/60"
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  {checkinDate ? `📅 Must be on or after ${new Date(checkinDate + "T00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}` : "📅 Set check-in first"}
+                </p>
               </div>
             </div>
           </div>
