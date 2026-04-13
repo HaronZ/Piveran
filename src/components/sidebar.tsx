@@ -19,6 +19,7 @@ import {
   Menu,
   LogOut,
   HardHat,
+  ListChecks,
   Loader2,
   X,
 } from "lucide-react";
@@ -51,6 +52,7 @@ const navigation = [
       { name: "Customers", href: "/dashboard/customers", icon: Users },
       { name: "Cars", href: "/dashboard/cars", icon: Car },
       { name: "Mechanics", href: "/dashboard/mechanics", icon: HardHat },
+      { name: "Services", href: "/dashboard/services", icon: ListChecks },
     ],
   },
   {
