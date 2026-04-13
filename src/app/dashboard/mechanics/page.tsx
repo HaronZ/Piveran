@@ -1,16 +1,24 @@
-import { ComingSoonPage } from "@/components/coming-soon-page";
-import { HardHat } from "lucide-react";
-
-export const metadata = {
-  title: "Mechanics | Sir Keith Auto Parts & Garage",
-};
+import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
+import { DataTableSkeleton } from "@/components/data-table-skeleton";
+import { MechanicsTable } from "@/components/mechanics-table";
+import { getMechanics } from "@/lib/db/queries/mechanics";
 
 export default function MechanicsPage() {
   return (
-    <ComingSoonPage
-      title="Mechanics"
-      description="Manage mechanic profiles, labor rates, and assignments."
-      icon={<HardHat className="h-10 w-10 text-amber-500" />}
-    />
+    <div className="space-y-6">
+      <PageHeader
+        title="Mechanics"
+        description="Manage your garage mechanics"
+      />
+      <Suspense fallback={<DataTableSkeleton />}>
+        <MechanicsData />
+      </Suspense>
+    </div>
   );
+}
+
+async function MechanicsData() {
+  const mechanics = await getMechanics();
+  return <MechanicsTable mechanics={mechanics} />;
 }

@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   Menu,
   LogOut,
-  Settings,
+  HardHat,
   Loader2,
   X,
 } from "lucide-react";
@@ -50,7 +50,7 @@ const navigation = [
       { name: "Job Orders", href: "/dashboard/job-orders", icon: Wrench },
       { name: "Customers", href: "/dashboard/customers", icon: Users },
       { name: "Cars", href: "/dashboard/cars", icon: Car },
-      { name: "Mechanics", href: "/dashboard/mechanics", icon: Settings },
+      { name: "Mechanics", href: "/dashboard/mechanics", icon: HardHat },
     ],
   },
   {
