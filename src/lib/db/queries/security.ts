@@ -31,7 +31,7 @@ export async function getUsersWithRoles() {
 
   return allUsers.map((u) => ({
     ...u,
-    roles: allUserRoles.filter((ur) => ur.userId === u.id).map((ur) => ur.roleName),
+    roles: [...new Set(allUserRoles.filter((ur) => ur.userId === u.id).map((ur) => ur.roleName))],
   }));
 }
 
@@ -62,8 +62,8 @@ export async function getRolesWithViews() {
 
   return allRoles.map((r) => ({
     ...r,
-    views: allRoleViews.filter((rv) => rv.roleId === r.id).map((rv) => rv.viewName),
-    userCount: allUserRoles.filter((ur) => ur.roleId === r.id).length,
+    views: [...new Set(allRoleViews.filter((rv) => rv.roleId === r.id).map((rv) => rv.viewName))],
+    userCount: new Set(allUserRoles.filter((ur) => ur.roleId === r.id).map((ur) => ur.userId)).size,
   }));
 }
 
