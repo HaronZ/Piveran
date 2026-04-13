@@ -78,21 +78,21 @@ function PartPicker({
   return (
     <div className="relative">
       <div
-        className="flex items-center gap-2 h-9 w-full rounded-md border border-border/40 bg-card/60 px-3 text-sm cursor-pointer hover:bg-card/80 transition-colors"
+        className="flex items-start gap-2 min-h-9 w-full rounded-md border border-border/40 bg-card/60 px-3 py-2 text-sm cursor-pointer hover:bg-card/80 transition-colors"
         onClick={() => {
           setOpen(!open);
           setTimeout(() => inputRef.current?.focus(), 50);
         }}
       >
         {value ? (
-          <span className="flex items-center gap-2 flex-1 min-w-0">
-            <Package className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-            <span className="truncate">{value}</span>
+          <span className="flex items-start gap-2 flex-1 min-w-0">
+            <Package className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+            <span className="line-clamp-2 text-xs leading-snug">{value}</span>
           </span>
         ) : (
           <span className="text-muted-foreground flex-1">Select a part...</span>
         )}
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform mt-0.5 ${open ? "rotate-180" : ""}`} />
       </div>
 
       {open && (
@@ -409,7 +409,7 @@ export function StockLogDialog({
                   min={0}
                   defaultValue={entry?.unitPrice ?? ""}
                   placeholder="0.00"
-                  className="border-border/40 bg-card/60 font-mono"
+                  className="border-border/40 bg-card/60 font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
