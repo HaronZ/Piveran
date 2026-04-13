@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2, DollarSign, Tag, MessageSquare } from "lucide-react";
+import { Loader2, DollarSign, Tag, MessageSquare, TrendingUp, TrendingDown, Info } from "lucide-react";
 import { toast } from "sonner";
 import { createCashEntry, updateCashEntry } from "@/lib/actions/cash-log";
 import type { CashLogRow, CashActionRow, ExpenseTypeRow, OpexTypeRow } from "@/lib/db/queries/cash-log";
@@ -55,6 +55,13 @@ export function CashLogDialog({
   const selectedExpenseName = expenseTypes.find((e) => e.id.toString() === expenseTypeId)?.name;
   const selectedOpexName = opexTypes.find((o) => o.id.toString() === opexTypeId)?.name;
 
+  // Determine if selected action is Cash In
+  const isCashIn = selectedActionName
+    ? selectedActionName.toLowerCase().includes("in") ||
+      selectedActionName.toLowerCase().includes("revenue") ||
+      selectedActionName.toLowerCase().includes("income")
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent key={`cl-${entry?.id || "new"}`} className="sm:max-w-[480px] border-border/40 bg-card/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
@@ -81,7 +88,7 @@ export function CashLogDialog({
             </div>
           )}
 
-          {/* Date + Action */}
+          {/* ── Section 1: Transaction ── */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <DollarSign className="h-4 w-4" />
@@ -97,9 +104,13 @@ export function CashLogDialog({
                   name="date"
                   type="date"
                   defaultValue={entry?.date || today}
+                  max={today}
                   required
                   className="border-border/40 bg-card/60"
                 />
+                <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                  <Info className="h-2.5 w-2.5" /> Today or earlier
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">
@@ -109,40 +120,64 @@ export function CashLogDialog({
                 <Select value={actionId} onValueChange={(val) => setActionId(val as string ?? "")}>
                   <SelectTrigger className="border-border/40 bg-card/60">
                     <SelectValue placeholder="Cash In / Out">
-                      {selectedActionName || "Cash In / Out"}
+                      {selectedActionName ? (
+                        <span className="flex items-center gap-2">
+                          {isCashIn ? (
+                            <TrendingUp className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3 text-red-500" />
+                          )}
+                          {selectedActionName}
+                        </span>
+                      ) : "Cash In / Out"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
-                    {actions.map((a) => (
-                      <SelectItem key={a.id} value={a.id.toString()}>
-                        {a.action}
-                      </SelectItem>
-                    ))}
+                    {actions.map((a) => {
+                      const isIn = a.action.toLowerCase().includes("in") ||
+                        a.action.toLowerCase().includes("revenue") ||
+                        a.action.toLowerCase().includes("income");
+                      return (
+                        <SelectItem key={a.id} value={a.id.toString()}>
+                          <span className="flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${isIn ? "bg-green-500" : "bg-red-500"}`} />
+                            {a.action}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
+            {/* Amount with visual indicator */}
             <div className="space-y-1.5">
               <Label htmlFor="amount" className="text-xs">
                 Amount (₱) <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={entry?.amount || ""}
-                required
-                className="border-border/40 bg-card/60 font-mono text-lg"
-                placeholder="0.00"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm font-mono">₱</span>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={entry?.amount || ""}
+                  required
+                  className={`border-border/40 bg-card/60 font-mono text-lg pl-7 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                    isCashIn === true ? "text-green-500" : isCashIn === false ? "text-red-500" : ""
+                  }`}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </div>
 
           <Separator className="border-border/30" />
 
-          {/* Category */}
+          {/* ── Section 2: Category ── */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <Tag className="h-4 w-4" />
@@ -186,7 +221,7 @@ export function CashLogDialog({
 
           <Separator className="border-border/30" />
 
-          {/* Comment */}
+          {/* ── Section 3: Notes ── */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <MessageSquare className="h-4 w-4" />
