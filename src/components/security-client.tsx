@@ -199,8 +199,8 @@ function UsersTab({
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {u.roles.length > 0 ? (
-                          u.roles.map((r) => (
-                            <Badge key={r} variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/20">
+                          [...new Set(u.roles)].map((r, idx) => (
+                            <Badge key={`${u.id}-${r}-${idx}`} variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/20">
                               {r}
                             </Badge>
                           ))
@@ -298,9 +298,9 @@ function AssignRoleDialog({
             <Label className="text-xs">Current Roles</Label>
             <div className="flex flex-wrap gap-2">
               {assignedRoleNames.length > 0 ? (
-                assignedRoleNames.map((r) => (
+                [...new Set(assignedRoleNames)].map((r, idx) => (
                   <Badge
-                    key={r}
+                    key={`assign-${r}-${idx}`}
                     variant="secondary"
                     className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/20 gap-1 pr-1"
                   >
