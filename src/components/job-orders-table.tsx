@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -12,7 +13,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Search, Plus, MoreHorizontal, Pencil, Trash2,
+  Search, Plus, MoreHorizontal, Pencil, Trash2, Eye,
   ArrowUpDown, ArrowUp, ArrowDown,
   ClipboardList, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Clock, CheckCircle2, XCircle, Loader,
@@ -213,8 +214,10 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
                 const cfg = STATUS_CONFIG[jo.statusName || ""] || { bg: "bg-muted text-muted-foreground", icon: null };
                 return (
                   <TableRow key={jo.id} className="border-border/40 hover:bg-orange-500/5 transition-colors">
-                    <TableCell className="font-mono font-bold text-sm text-orange-500">
-                      {jo.joNumber}
+                    <TableCell className="font-mono font-bold text-sm">
+                      <Link href={`/dashboard/job-orders/${jo.id}`} className="text-orange-500 hover:text-orange-400 hover:underline transition-colors">
+                        {jo.joNumber}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm">
                       {jo.customerName || <span className="text-muted-foreground">Walk-in</span>}
@@ -244,6 +247,9 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                          <DropdownMenuItem onClick={() => { window.location.href = `/dashboard/job-orders/${jo.id}`; }}>
+                            <Eye className="h-4 w-4 mr-2" /> View
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditJo(jo)}>
                             <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
