@@ -46,6 +46,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   AlertTriangle,
+  X,
+  Filter,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PartDialog } from "@/components/part-dialog";
@@ -71,6 +73,7 @@ interface PartsTableProps {
 export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("All");
+  const [showCriticalOnly, setShowCriticalOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(1);
@@ -122,6 +125,12 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
       }
     }
 
+    if (showCriticalOnly) {
+      rows = rows.filter(
+        (p) => p.includeCritical && p.criticalCount > 0 && p.currentStock <= p.criticalCount
+      );
+    }
+
     rows.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -142,7 +151,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
     });
 
     return rows;
-  }, [parts, search, brandFilter, sortKey, sortDir]);
+  }, [parts, search, brandFilter, showCriticalOnly, sortKey, sortDir]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -173,15 +182,41 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
   return (
     <TooltipProvider>
     <div className="space-y-4">
-      {/* Low Stock Alert Banner */}
+      {/* Low Stock Alert Banner — Clickable as filter toggle */}
       {lowStockCount > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5">
-          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-          <p className="text-sm text-red-400">
+        <button
+          type="button"
+          onClick={() => { setShowCriticalOnly((v) => !v); setPage(1); }}
+          className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 w-full text-left transition-all group ${
+            showCriticalOnly
+              ? "border-red-500/40 bg-red-500/10 ring-1 ring-red-500/20"
+              : "border-red-500/20 bg-red-500/5 hover:border-red-500/30 hover:bg-red-500/8"
+          }`}
+        >
+          {showCriticalOnly ? (
+            <Filter className="h-4 w-4 text-red-500 shrink-0" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+          )}
+          <p className="text-sm text-red-400 flex-1">
             <span className="font-semibold">{lowStockCount} part{lowStockCount > 1 ? "s" : ""}</span>{" "}
             at or below critical stock level
+            {showCriticalOnly ? (
+              <span className="ml-2 text-[10px] font-medium bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">FILTERED</span>
+            ) : (
+              <span className="ml-2 text-[10px] text-red-400/60 opacity-0 group-hover:opacity-100 transition-opacity">Click to filter</span>
+            )}
           </p>
-        </div>
+          {showCriticalOnly && (
+            <span
+              role="button"
+              onClick={(e) => { e.stopPropagation(); setShowCriticalOnly(false); setPage(1); }}
+              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-red-500/20 transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-red-400" />
+            </span>
+          )}
+        </button>
       )}
 
       {/* Toolbar */}
