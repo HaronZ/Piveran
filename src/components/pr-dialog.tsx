@@ -113,7 +113,7 @@ export function PrDialog({
                   type="date"
                   defaultValue={defaultDate}
                   min={isEdit ? undefined : new Date().toISOString().slice(0, 10)}
-                  className="h-9 text-sm bg-background/50"
+                  className="h-9 text-sm border-border/40 bg-card/60"
                 />
               </div>
 
