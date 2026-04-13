@@ -20,6 +20,7 @@ import {
   LogOut,
   HardHat,
   ListChecks,
+  FileBarChart,
   Loader2,
   X,
 } from "lucide-react";
@@ -66,6 +67,7 @@ const navigation = [
     group: "Admin",
     items: [
       { name: "Security", href: "/dashboard/security", icon: Shield },
+      { name: "Reports", href: "/dashboard/reports", icon: FileBarChart },
     ],
   },
 ];
