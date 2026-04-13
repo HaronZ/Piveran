@@ -34,7 +34,7 @@ import {
   type UserWithRolesRow,
   type RoleWithViewsRow,
   type RoleSelectorRow,
-} from "@/lib/db/queries/security";
+} from "@/lib/db/queries/security-types";
 
 type Tab = "users" | "roles";
 
