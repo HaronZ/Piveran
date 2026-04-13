@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -14,7 +15,7 @@ import {
   Search, Plus, MoreHorizontal, Pencil, Trash2,
   ArrowUpDown, ArrowUp, ArrowDown,
   ClipboardList, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Eye,
+  Clock, CheckCircle2, XCircle, Loader,
 } from "lucide-react";
 import { JobOrderDialog } from "@/components/job-order-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -28,11 +29,11 @@ type SortKey = "joNumber" | "customer" | "checkinDate" | "status";
 type SortDir = "asc" | "desc";
 const PAGE_SIZE = 20;
 
-const STATUS_COLORS: Record<string, string> = {
-  "Open": "bg-green-500/10 text-green-500 border-green-500/20",
-  "In Progress": "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  "Completed": "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  "Cancelled": "bg-red-500/10 text-red-500 border-red-500/20",
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode; bg: string }> = {
+  "Open": { color: "text-green-500", icon: <Clock className="h-3 w-3" />, bg: "bg-green-500/10 text-green-500 border-green-500/20" },
+  "In Progress": { color: "text-amber-500", icon: <Loader className="h-3 w-3" />, bg: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+  "Completed": { color: "text-blue-500", icon: <CheckCircle2 className="h-3 w-3" />, bg: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+  "Cancelled": { color: "text-red-500", icon: <XCircle className="h-3 w-3" />, bg: "bg-red-500/10 text-red-500 border-red-500/20" },
 };
 
 interface JobOrdersTableProps {
@@ -66,16 +67,20 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
       : <ArrowDown className="h-3 w-3 ml-1 text-orange-500" />;
   }
 
+  // Status summary cards
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const jo of jobOrders) {
+      const s = jo.statusName || "Unknown";
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return counts;
+  }, [jobOrders]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     let list = jobOrders;
-
-    // Status filter
-    if (statusFilter !== "all") {
-      list = list.filter((jo) => jo.statusName === statusFilter);
-    }
-
-    // Search
+    if (statusFilter !== "all") list = list.filter((jo) => jo.statusName === statusFilter);
     if (q) {
       list = list.filter(
         (jo) =>
@@ -84,8 +89,6 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
           (jo.carLabel && jo.carLabel.toLowerCase().includes(q))
       );
     }
-
-    // Sort
     list = [...list].sort((a, b) => {
       let cmp = 0;
       if (sortKey === "joNumber") cmp = a.joNumber.localeCompare(b.joNumber);
@@ -94,21 +97,11 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
       else if (sortKey === "status") cmp = (a.statusName || "").localeCompare(b.statusName || "");
       return sortDir === "desc" ? -cmp : cmp;
     });
-
     return list;
   }, [jobOrders, search, statusFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: jobOrders.length };
-    for (const jo of jobOrders) {
-      const s = jo.statusName || "Unknown";
-      counts[s] = (counts[s] || 0) + 1;
-    }
-    return counts;
-  }, [jobOrders]);
 
   function formatDate(d: string | null) {
     if (!d) return "—";
@@ -117,30 +110,46 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
 
   return (
     <div className="space-y-4">
-      {/* Status Filter Tabs */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={statusFilter === "all" ? "default" : "ghost"}
-          size="sm"
-          className={statusFilter === "all" ? "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/20" : ""}
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card
+          className={`border-border/40 backdrop-blur-md cursor-pointer transition-all ${statusFilter === "all" ? "bg-orange-500/10 border-orange-500/30 ring-1 ring-orange-500/20" : "bg-card/60 hover:bg-card/80"}`}
           onClick={() => { setStatusFilter("all"); setPage(1); }}
         >
-          All <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">{statusCounts.all}</Badge>
-        </Button>
-        {statuses.map((s) => (
-          <Button
-            key={s.id}
-            variant={statusFilter === s.status ? "default" : "ghost"}
-            size="sm"
-            className={statusFilter === s.status ? `${STATUS_COLORS[s.status] || ""} hover:opacity-90 border` : ""}
-            onClick={() => { setStatusFilter(s.status); setPage(1); }}
-          >
-            {s.status}
-            {statusCounts[s.status] ? (
-              <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">{statusCounts[s.status]}</Badge>
-            ) : null}
-          </Button>
-        ))}
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold">{jobOrders.length}</p>
+              </div>
+              <ClipboardList className="h-8 w-8 text-orange-500/30" />
+            </div>
+          </CardContent>
+        </Card>
+        {statuses.map((s) => {
+          const cfg = STATUS_CONFIG[s.status] || STATUS_CONFIG["Open"];
+          const count = statusCounts[s.status] || 0;
+          const isActive = statusFilter === s.status;
+          return (
+            <Card
+              key={s.id}
+              className={`border-border/40 backdrop-blur-md cursor-pointer transition-all ${isActive ? `${cfg.bg} border-current/30 ring-1 ring-current/20` : "bg-card/60 hover:bg-card/80"}`}
+              onClick={() => { setStatusFilter(isActive ? "all" : s.status); setPage(1); }}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{s.status}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${cfg.bg}`}>
+                    {cfg.icon}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Toolbar */}
@@ -154,18 +163,12 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
             className="pl-9 border-border/40 bg-card/60 backdrop-blur-md"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1.5 text-xs">
-            <ClipboardList className="h-3 w-3" />
-            {filtered.length} shown
-          </Badge>
-          <Button
-            onClick={() => setAddOpen(true)}
-            className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
-          >
-            <Plus className="h-4 w-4 mr-1.5" /> New Job Order
-          </Button>
-        </div>
+        <Button
+          onClick={() => setAddOpen(true)}
+          className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> New Job Order
+        </Button>
       </div>
 
       {/* Table */}
@@ -194,53 +197,65 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
             {paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                  {search || statusFilter !== "all" ? "No job orders match your filters" : "No job orders yet. Create one!"}
+                  <div className="flex flex-col items-center gap-2">
+                    <ClipboardList className="h-10 w-10 text-muted-foreground/30" />
+                    <p>{search || statusFilter !== "all" ? "No job orders match your filters" : "No job orders yet"}</p>
+                    {!search && statusFilter === "all" && (
+                      <Button size="sm" variant="outline" onClick={() => setAddOpen(true)} className="mt-1">
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Create your first job order
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              paged.map((jo) => (
-                <TableRow key={jo.id} className="border-border/40 hover:bg-orange-500/5 transition-colors">
-                  <TableCell className="font-mono font-bold text-sm text-orange-500">
-                    {jo.joNumber}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {jo.customerName || <span className="text-muted-foreground">—</span>}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {jo.carLabel || "—"}
-                  </TableCell>
-                  <TableCell>
-                    {jo.statusName ? (
-                      <Badge variant="secondary" className={`text-[10px] ${STATUS_COLORS[jo.statusName] || "bg-muted text-muted-foreground"}`}>
-                        {jo.statusName}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                    {formatDate(jo.checkinDate)}
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">
-                    {formatDate(jo.checkoutDate)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
-                        <DropdownMenuItem onClick={() => setEditJo(jo)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setDeletingJo(jo)} className="text-red-500 focus:text-red-500">
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+              paged.map((jo) => {
+                const cfg = STATUS_CONFIG[jo.statusName || ""] || { bg: "bg-muted text-muted-foreground", icon: null };
+                return (
+                  <TableRow key={jo.id} className="border-border/40 hover:bg-orange-500/5 transition-colors">
+                    <TableCell className="font-mono font-bold text-sm text-orange-500">
+                      {jo.joNumber}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {jo.customerName || <span className="text-muted-foreground">Walk-in</span>}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {jo.carLabel || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {jo.statusName ? (
+                        <Badge variant="secondary" className={`text-[10px] gap-1 ${cfg.bg}`}>
+                          {cfg.icon}
+                          {jo.statusName}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {formatDate(jo.checkinDate)}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">
+                      {formatDate(jo.checkoutDate)}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                          <DropdownMenuItem onClick={() => setEditJo(jo)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setDeletingJo(jo)} className="text-red-500 focus:text-red-500">
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -263,14 +278,7 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
       {/* Dialogs */}
       <JobOrderDialog open={addOpen} onOpenChange={setAddOpen} statuses={statuses} customers={customers} cars={cars} />
       {editJo && (
-        <JobOrderDialog
-          open={!!editJo}
-          onOpenChange={(o) => { if (!o) setEditJo(null); }}
-          jobOrder={editJo}
-          statuses={statuses}
-          customers={customers}
-          cars={cars}
-        />
+        <JobOrderDialog open={!!editJo} onOpenChange={(o) => { if (!o) setEditJo(null); }} jobOrder={editJo} statuses={statuses} customers={customers} cars={cars} />
       )}
       {deletingJo && (
         <DeleteDialog

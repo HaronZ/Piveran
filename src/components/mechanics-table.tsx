@@ -7,13 +7,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Search, Plus, MoreHorizontal, Pencil, Trash2,
   ArrowUpDown, ArrowUp, ArrowDown,
-  Wrench, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  Wrench, Phone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { MechanicDialog } from "@/components/mechanic-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -54,6 +55,8 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
   const fullName = (m: MechanicRow) =>
     [m.firstName, m.lastName].filter(Boolean).join(" ");
 
+  const totalJobs = useMemo(() => mechanics.reduce((sum, m) => sum + m.jobsCount, 0), [mechanics]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     let list = mechanics;
@@ -80,6 +83,49 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Card className="border-border/40 bg-card/60 backdrop-blur-md">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Mechanics</p>
+                <p className="text-2xl font-bold">{mechanics.length}</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <Wrench className="h-5 w-5 text-purple-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/40 bg-card/60 backdrop-blur-md">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Jobs Assigned</p>
+                <p className="text-2xl font-bold">{totalJobs}</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                <Wrench className="h-5 w-5 text-orange-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/40 bg-card/60 backdrop-blur-md hidden sm:block">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Avg Jobs / Mechanic</p>
+                <p className="text-2xl font-bold">{mechanics.length > 0 ? (totalJobs / mechanics.length).toFixed(1) : "0"}</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                <Wrench className="h-5 w-5 text-teal-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="relative flex-1 max-w-sm">
@@ -91,18 +137,12 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
             className="pl-9 border-border/40 bg-card/60 backdrop-blur-md"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1.5 text-xs">
-            <Wrench className="h-3 w-3" />
-            {mechanics.length} total
-          </Badge>
-          <Button
-            onClick={() => setAddOpen(true)}
-            className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
-          >
-            <Plus className="h-4 w-4 mr-1.5" /> Add Mechanic
-          </Button>
-        </div>
+        <Button
+          onClick={() => setAddOpen(true)}
+          className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add Mechanic
+        </Button>
       </div>
 
       {/* Table */}
@@ -125,7 +165,15 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
             {paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                  {search ? "No mechanics match your search" : "No mechanics yet. Add one!"}
+                  <div className="flex flex-col items-center gap-2">
+                    <Wrench className="h-10 w-10 text-muted-foreground/30" />
+                    <p>{search ? "No mechanics match your search" : "No mechanics yet"}</p>
+                    {!search && (
+                      <Button size="sm" variant="outline" onClick={() => setAddOpen(true)} className="mt-1">
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Add your first mechanic
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -136,14 +184,26 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-500/10 text-purple-500 text-sm font-bold">
                         {m.firstName.charAt(0)}{m.lastName ? m.lastName.charAt(0) : ""}
                       </div>
-                      <p className="font-semibold text-sm">{fullName(m)}</p>
+                      <div>
+                        <p className="font-semibold text-sm">{fullName(m)}</p>
+                        {m.nickName && (
+                          <p className="text-[10px] text-muted-foreground">"{m.nickName}"</p>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                     {m.nickName || "—"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                    {m.primaryContact || "—"}
+                  <TableCell className="hidden md:table-cell text-sm">
+                    {m.primaryContact ? (
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3 w-3" />
+                        {m.primaryContact}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     {m.jobsCount > 0 ? (
