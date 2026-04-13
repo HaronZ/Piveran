@@ -13,14 +13,13 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowLeft,
-  Users,
   Phone,
   Mail,
-  MapPin,
   Cake,
   Car,
   Calendar,
 } from "lucide-react";
+import { CustomerDetailClient } from "@/components/customer-detail-client";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -40,20 +39,6 @@ export default async function CustomerDetailPage({ params }: Props) {
   ]
     .filter(Boolean)
     .join(" ");
-
-  const primaryAddress = customer.addresses[0];
-  const addressStr = primaryAddress
-    ? [
-        primaryAddress.street,
-        primaryAddress.village,
-        primaryAddress.barangay,
-        primaryAddress.city,
-        primaryAddress.province,
-        primaryAddress.zipCode,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : null;
 
   return (
     <div className="space-y-6">
@@ -113,29 +98,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                     </span>
                   </div>
                 )}
-                {addressStr && (
-                  <div className="flex items-start gap-2 text-sm sm:col-span-2 lg:col-span-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <span>{addressStr}</span>
-                  </div>
-                )}
               </div>
-
-              {/* Extra contacts */}
-              {customer.contacts.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {customer.contacts.map((c) => (
-                    <Badge
-                      key={c.id}
-                      variant="secondary"
-                      className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs gap-1"
-                    >
-                      <Phone className="h-3 w-3" />
-                      {c.contactNumber}
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Meta */}
@@ -150,6 +113,13 @@ export default async function CustomerDetailPage({ params }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Contacts & Addresses — Interactive */}
+      <CustomerDetailClient
+        customerId={customer.id}
+        contacts={customer.contacts}
+        addresses={customer.addresses}
+      />
 
       {/* Linked Cars */}
       <Card className="border-border/40 bg-card/60 backdrop-blur-md">
