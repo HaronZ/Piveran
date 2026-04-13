@@ -36,70 +36,58 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
+  // Batch 1: Simple counts (lightweight queries)
   const [
     partsCount,
     customersCount,
     carsCount,
+    vendorsCount,
+    totalJOsResult,
+  ] = await Promise.all([
+    db.select({ value: count() }).from(parts),
+    db.select({ value: count() }).from(customers),
+    db.select({ value: count() }).from(cars),
+    db.select({ value: count() }).from(vendors),
+    db.select({ value: count() }).from(jobOrders),
+  ]);
+
+  // Batch 2: Filtered counts + aggregations
+  const [
     activeJOsResult,
     pendingPaymentJOsResult,
     completedJOsResult,
     cancelledJOsResult,
-    vendorsCount,
     pendingPRsResult,
     waitingDeliveryPRsResult,
-    totalJOsResult,
-    invValue,
     revenueResult,
+  ] = await Promise.all([
+    db.select({ value: count() }).from(jobOrders)
+      .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5))),
+    db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 6)),
+    db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 7)),
+    db.select({ value: count() }).from(jobOrders)
+      .where(eq(jobOrders.statusId, 8)),
+    db.select({ value: count() }).from(purchaseRequests)
+      .where(and(gte(purchaseRequests.statusId, 1), lte(purchaseRequests.statusId, 6))),
+    db.select({ value: count() }).from(purchaseRequests)
+      .where(eq(purchaseRequests.statusId, 5)),
+    db.select({ total: sum(joPayments.amountPaid) }).from(joPayments),
+  ]);
+
+  // Batch 3: Complex queries (raw SQL)
+  const [
+    invValue,
     lowStockResult,
     waitingPRNamesResult,
     monthlyRevenueResult,
     topBrandsResult,
   ] = await Promise.all([
-    db.select({ value: count() }).from(parts),
-    db.select({ value: count() }).from(customers),
-    db.select({ value: count() }).from(cars),
-    db
-      .select({ value: count() })
-      .from(jobOrders)
-      .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5))),
-    db
-      .select({ value: count() })
-      .from(jobOrders)
-      .where(eq(jobOrders.statusId, 6)),
-    db
-      .select({ value: count() })
-      .from(jobOrders)
-      .where(eq(jobOrders.statusId, 7)),
-    db
-      .select({ value: count() })
-      .from(jobOrders)
-      .where(eq(jobOrders.statusId, 8)),
-    db.select({ value: count() }).from(vendors),
-    db
-      .select({ value: count() })
-      .from(purchaseRequests)
-      .where(
-        and(
-          gte(purchaseRequests.statusId, 1),
-          lte(purchaseRequests.statusId, 6)
-        )
-      ),
-    db
-      .select({ value: count() })
-      .from(purchaseRequests)
-      .where(eq(purchaseRequests.statusId, 5)),
-    db.select({ value: count() }).from(jobOrders),
-    db
-      .select({
-        value: inventoryValue.currentValue,
-        date: inventoryValue.date,
-      })
+    db.select({ value: inventoryValue.currentValue, date: inventoryValue.date })
       .from(inventoryValue)
       .orderBy(sql`${inventoryValue.date} DESC NULLS LAST`)
       .limit(1),
-    db
-      .select({ total: sum(joPayments.amountPaid) })
-      .from(joPayments),
     db.execute(sql`
       SELECT p.name, 
              COALESCE(SUM(CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END), 0) as current_stock,
@@ -112,12 +100,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       ORDER BY current_stock ASC
       LIMIT 10
     `),
-    db
-      .select({ prNumber: purchaseRequests.prNumber })
+    db.select({ prNumber: purchaseRequests.prNumber })
       .from(purchaseRequests)
       .where(eq(purchaseRequests.statusId, 5))
       .limit(5),
-    // Monthly revenue (last 6 months from JO payments)
     db.execute(sql`
       SELECT TO_CHAR(date_trunc('month', jp.date_paid), 'Mon') as month,
              EXTRACT(MONTH FROM date_trunc('month', jp.date_paid)) as month_num,
@@ -129,7 +115,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       ORDER BY year_num DESC, month_num DESC
       LIMIT 6
     `),
-    // Top brands by part count
     db.execute(sql`
       SELECT b.name, COUNT(p.id) as part_count
       FROM brands b
