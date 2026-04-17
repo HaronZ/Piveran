@@ -7,6 +7,7 @@ import {
   customers, cars, mechanics,
   joPhotos, joComments,
   joMaterialPhotos, joMaterialComments,
+  joLaborPhotos, joLaborComments,
 } from "@/lib/db/schema/garage";
 import { parts } from "@/lib/db/schema/vendor";
 import { eq, sql, desc, asc } from "drizzle-orm";
@@ -272,6 +273,52 @@ export async function getJoMaterialComments(joId: string): Promise<JoMaterialCom
     .innerJoin(joMaterials, eq(joMaterialComments.joMaterialId, joMaterials.id))
     .where(eq(joMaterials.joId, joId))
     .orderBy(desc(joMaterialComments.createdAt));
+}
+
+// ─── JO Labor Photos ───
+export type JoLaborPhotoRow = {
+  id: string;
+  joLaborId: string;
+  photoUrl: string;
+  comment: string | null;
+  createdAt: string | null;
+};
+
+export async function getJoLaborPhotos(joId: string): Promise<JoLaborPhotoRow[]> {
+  return db
+    .select({
+      id: joLaborPhotos.id,
+      joLaborId: joLaborPhotos.joLaborId,
+      photoUrl: joLaborPhotos.photoUrl,
+      comment: joLaborPhotos.comment,
+      createdAt: sql<string>`${joLaborPhotos.createdAt}`.as("lp_created_at"),
+    })
+    .from(joLaborPhotos)
+    .innerJoin(joLabors, eq(joLaborPhotos.joLaborId, joLabors.id))
+    .where(eq(joLabors.joId, joId))
+    .orderBy(desc(joLaborPhotos.createdAt));
+}
+
+// ─── JO Labor Comments ───
+export type JoLaborCommentRow = {
+  id: string;
+  joLaborId: string;
+  comment: string;
+  createdAt: string | null;
+};
+
+export async function getJoLaborComments(joId: string): Promise<JoLaborCommentRow[]> {
+  return db
+    .select({
+      id: joLaborComments.id,
+      joLaborId: joLaborComments.joLaborId,
+      comment: joLaborComments.comment,
+      createdAt: sql<string>`${joLaborComments.createdAt}`.as("lc_created_at"),
+    })
+    .from(joLaborComments)
+    .innerJoin(joLabors, eq(joLaborComments.joLaborId, joLabors.id))
+    .where(eq(joLabors.joId, joId))
+    .orderBy(desc(joLaborComments.createdAt));
 }
 
 // ─── JO Photos ───

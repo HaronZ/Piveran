@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { joMaterials, joLabors, joPayments, joPhotos, joComments, joMaterialPhotos, joMaterialComments } from "@/lib/db/schema/garage";
+import { joMaterials, joLabors, joPayments, joPhotos, joComments, joMaterialPhotos, joMaterialComments, joLaborPhotos, joLaborComments } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -398,6 +398,79 @@ export async function addJoMaterialComment(
 
 export async function deleteJoMaterialComment(id: string, joId: string): Promise<JoDetailFormState> {
   await db.delete(joMaterialComments).where(eq(joMaterialComments.id, id));
+  revalidatePath(`/dashboard/job-orders/${joId}`);
+  return { success: true };
+}
+
+// ─── JO Labor Photos ───
+export async function addJoLaborPhoto(
+  joLaborId: string,
+  joId: string,
+  photoUrl: string,
+  comment: string | null
+): Promise<JoDetailFormState> {
+  if (!photoUrl) return { error: "Photo URL is required" };
+  try {
+    const userId = await requireUserId();
+    await db.insert(joLaborPhotos).values({
+      joLaborId,
+      photoUrl,
+      comment: comment?.trim() || null,
+      createdBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add photo") };
+  }
+  revalidatePath(`/dashboard/job-orders/${joId}`);
+  return { success: true };
+}
+
+export async function deleteJoLaborPhoto(
+  id: string,
+  joId: string,
+  photoUrl: string
+): Promise<JoDetailFormState> {
+  try {
+    await db.delete(joLaborPhotos).where(eq(joLaborPhotos.id, id));
+    await deleteMediaByUrl([photoUrl]).catch(() => {});
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete photo") };
+  }
+  revalidatePath(`/dashboard/job-orders/${joId}`);
+  return { success: true };
+}
+
+// ─── JO Labor Comments ───
+const joLaborCommentSchema = z.object({
+  comment: z.string().min(1, "Comment is required"),
+});
+
+export async function addJoLaborComment(
+  joLaborId: string,
+  joId: string,
+  _prev: JoDetailFormState,
+  formData: FormData
+): Promise<JoDetailFormState> {
+  const parsed = joLaborCommentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  try {
+    const userId = await requireUserId();
+    await db.insert(joLaborComments).values({
+      joLaborId,
+      comment: parsed.data.comment.trim(),
+      createdBy: userId,
+      updatedBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add comment") };
+  }
+  revalidatePath(`/dashboard/job-orders/${joId}`);
+  return { success: true };
+}
+
+export async function deleteJoLaborComment(id: string, joId: string): Promise<JoDetailFormState> {
+  await db.delete(joLaborComments).where(eq(joLaborComments.id, id));
   revalidatePath(`/dashboard/job-orders/${joId}`);
   return { success: true };
 }

@@ -30,6 +30,7 @@ import {
 import { JoPhotosSection } from "@/components/jo-photos-section";
 import { JoCommentsSection } from "@/components/jo-comments-section";
 import { JoMaterialDetailsDialog } from "@/components/jo-material-details-dialog";
+import { JoLaborDetailsDialog } from "@/components/jo-labor-details-dialog";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -43,6 +44,7 @@ import type {
   JoLaborMechanicRow, JoPhotoRow, JoCommentRow, LaborTypeRow,
   JoMaterialStatusRow, JoLaborStatusRow, CashierRow,
   JoMaterialPhotoRow, JoMaterialCommentRow,
+  JoLaborPhotoRow, JoLaborCommentRow,
 } from "@/lib/db/queries/jo-detail";
 import type { PartOption } from "@/lib/db/queries/purchase-requests";
 import type { MechanicSelectorRow } from "@/lib/db/queries/mechanics";
@@ -76,6 +78,8 @@ interface JoDetailClientProps {
   comments: JoCommentRow[];
   materialPhotos: JoMaterialPhotoRow[];
   materialComments: JoMaterialCommentRow[];
+  laborPhotos: JoLaborPhotoRow[];
+  laborComments: JoLaborCommentRow[];
   parts: PartOption[];
   laborTypes: LaborTypeRow[];
   materialStatuses: JoMaterialStatusRow[];
@@ -94,6 +98,8 @@ export function JoDetailClient({
   comments,
   materialPhotos,
   materialComments,
+  laborPhotos,
+  laborComments,
   parts,
   laborTypes,
   materialStatuses,
@@ -239,6 +245,8 @@ export function JoDetailClient({
           laborTypes={laborTypes}
           statuses={laborStatuses}
           laborMechanics={laborMechanics}
+          laborPhotos={laborPhotos}
+          laborComments={laborComments}
         />
       )}
       {tab === "payments" && (
@@ -487,17 +495,40 @@ function MaterialDialog({
 //  LABORS TAB
 // ═══════════════════════════════════════
 function LaborsTab({
-  joId, labors, laborTypes, statuses, laborMechanics,
+  joId, labors, laborTypes, statuses, laborMechanics, laborPhotos, laborComments,
 }: {
   joId: string;
   labors: JoLaborRow[];
   laborTypes: LaborTypeRow[];
   statuses: JoLaborStatusRow[];
   laborMechanics: JoLaborMechanicRow[];
+  laborPhotos: JoLaborPhotoRow[];
+  laborComments: JoLaborCommentRow[];
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<JoLaborRow | null>(null);
   const [delItem, setDelItem] = useState<JoLaborRow | null>(null);
+  const [detailsItem, setDetailsItem] = useState<JoLaborRow | null>(null);
+
+  const photosByLabor = useMemo(() => {
+    const m = new Map<string, JoLaborPhotoRow[]>();
+    for (const p of laborPhotos) {
+      const arr = m.get(p.joLaborId) ?? [];
+      arr.push(p);
+      m.set(p.joLaborId, arr);
+    }
+    return m;
+  }, [laborPhotos]);
+
+  const commentsByLabor = useMemo(() => {
+    const m = new Map<string, JoLaborCommentRow[]>();
+    for (const c of laborComments) {
+      const arr = m.get(c.joLaborId) ?? [];
+      arr.push(c);
+      m.set(c.joLaborId, arr);
+    }
+    return m;
+  }, [laborComments]);
 
   return (
     <div className="space-y-3">
@@ -529,9 +560,27 @@ function LaborsTab({
             ) : (
               labors.map((l) => {
                 const mechs = laborMechanics.filter((m) => m.joLaborId === l.id);
+                const pCount = photosByLabor.get(l.id)?.length ?? 0;
+                const cCount = commentsByLabor.get(l.id)?.length ?? 0;
                 return (
                   <TableRow key={l.id} className="border-border/40 hover:bg-orange-500/5">
-                    <TableCell className="text-sm font-medium">{l.laborTypeName || "Custom"}</TableCell>
+                    <TableCell className="text-sm">
+                      <div className="font-medium">{l.laborTypeName || "Custom"}</div>
+                      {(pCount > 0 || cCount > 0) && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {pCount > 0 && (
+                            <span className="text-[10px] text-violet-500 flex items-center gap-0.5">
+                              <Images className="h-3 w-3" />{pCount}
+                            </span>
+                          )}
+                          {cCount > 0 && (
+                            <span className="text-[10px] text-sky-500 flex items-center gap-0.5">
+                              <MessageSquare className="h-3 w-3" />{cCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right text-sm font-mono">{fmt(l.price)}</TableCell>
                     <TableCell className="text-right text-sm font-mono text-muted-foreground">{l.discount && parseFloat(l.discount) > 0 ? fmt(l.discount) : "—"}</TableCell>
                     <TableCell className="text-right text-sm font-mono font-semibold">{fmt(l.totalPrice)}</TableCell>
@@ -545,6 +594,7 @@ function LaborsTab({
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                          <DropdownMenuItem onClick={() => setDetailsItem(l)}><FileText className="h-4 w-4 mr-2" />Photos & Comments</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditItem(l)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDelItem(l)} className="text-red-500 focus:text-red-500"><Trash2 className="h-4 w-4 mr-2" />Delete</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -561,6 +611,16 @@ function LaborsTab({
       <LaborDialog open={addOpen} onOpenChange={setAddOpen} joId={joId} laborTypes={laborTypes} statuses={statuses} />
       {editItem && <LaborDialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }} joId={joId} item={editItem} laborTypes={laborTypes} statuses={statuses} />}
       {delItem && <DeleteDialog open={!!delItem} onOpenChange={(o) => { if (!o) setDelItem(null); }} title="Delete Labor" description={`Remove "${delItem.laborTypeName}"?`} onConfirm={async () => { await deleteJoLabor(delItem.id, joId); }} />}
+      {detailsItem && (
+        <JoLaborDetailsDialog
+          open={!!detailsItem}
+          onOpenChange={(o) => { if (!o) setDetailsItem(null); }}
+          joId={joId}
+          labor={detailsItem}
+          photos={photosByLabor.get(detailsItem.id) ?? []}
+          comments={commentsByLabor.get(detailsItem.id) ?? []}
+        />
+      )}
     </div>
   );
 }
