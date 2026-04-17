@@ -1,8 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { roles, userRoles, roleViews } from "@/lib/db/schema/security";
+import { roles, userRoles, roleViews, roleTables } from "@/lib/db/schema/security";
 import { eq, and } from "drizzle-orm";
+import type { AccessMethod } from "@/lib/db/queries/security-types";
+
+const ACCESS_METHOD_VALUES = new Set<AccessMethod>(["read", "write", "admin"]);
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUserId } from "@/lib/auth/actions";
@@ -25,6 +28,7 @@ export async function createRole(
 
   // Get views from form (checkboxes send "on" or are absent)
   const views = getViewsFromForm(formData);
+  const tablePerms = getTablesFromForm(formData);
 
   const newRole = await db
     .insert(roles)
@@ -34,11 +38,19 @@ export async function createRole(
     })
     .returning({ id: roles.id });
 
-  // Insert role_views
-  if (views.length > 0 && newRole[0]) {
-    const userId = await requireUserId();
+  if (!newRole[0]) return { error: "Failed to create role" };
+  const roleId = newRole[0].id;
+  const userId = await requireUserId();
+
+  if (views.length > 0) {
     await db.insert(roleViews).values(
-      views.map((v) => ({ roleId: newRole[0].id, viewName: v, createdBy: userId, updatedBy: userId }))
+      views.map((v) => ({ roleId, viewName: v, createdBy: userId, updatedBy: userId }))
+    );
+  }
+
+  if (tablePerms.length > 0) {
+    await db.insert(roleTables).values(
+      tablePerms.map((t) => ({ roleId, tableName: t.tableName, accessMethod: t.accessMethod }))
     );
   }
 
@@ -56,6 +68,7 @@ export async function updateRole(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const views = getViewsFromForm(formData);
+  const tablePerms = getTablesFromForm(formData);
 
   await db
     .update(roles)
@@ -65,12 +78,19 @@ export async function updateRole(
     })
     .where(eq(roles.id, id));
 
-  // Replace role_views: delete all, then re-insert
+  // Replace role_views and role_tables: delete all, then re-insert
   await db.delete(roleViews).where(eq(roleViews.roleId, id));
+  await db.delete(roleTables).where(eq(roleTables.roleId, id));
+
+  const userId = await requireUserId();
   if (views.length > 0) {
-    const userId = await requireUserId();
     await db.insert(roleViews).values(
       views.map((v) => ({ roleId: id, viewName: v, createdBy: userId, updatedBy: userId }))
+    );
+  }
+  if (tablePerms.length > 0) {
+    await db.insert(roleTables).values(
+      tablePerms.map((t) => ({ roleId: id, tableName: t.tableName, accessMethod: t.accessMethod }))
     );
   }
 
@@ -124,4 +144,17 @@ function getViewsFromForm(formData: FormData): string[] {
     }
   }
   return views;
+}
+
+// ─── Helper: extract table permissions from FormData ───
+// Input fields are named `table_<tableName>` with value = access method ("read"|"write"|"admin"|"none").
+function getTablesFromForm(formData: FormData): { tableName: string; accessMethod: AccessMethod }[] {
+  const out: { tableName: string; accessMethod: AccessMethod }[] = [];
+  for (const [key, rawValue] of formData.entries()) {
+    if (!key.startsWith("table_")) continue;
+    const value = String(rawValue);
+    if (!ACCESS_METHOD_VALUES.has(value as AccessMethod)) continue;
+    out.push({ tableName: key.replace("table_", ""), accessMethod: value as AccessMethod });
+  }
+  return out;
 }

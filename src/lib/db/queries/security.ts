@@ -1,10 +1,11 @@
 import { db } from "@/lib/db";
-import { users, roles, userRoles, roleViews } from "@/lib/db/schema/security";
-import { eq, sql, asc, desc } from "drizzle-orm";
+import { users, roles, userRoles, roleViews, roleTables } from "@/lib/db/schema/security";
+import { eq, sql, asc } from "drizzle-orm";
+import type { AccessMethod } from "./security-types";
 
 // Re-export types from the shared file (safe for client imports)
-export type { UserWithRolesRow, RoleWithViewsRow, RoleSelectorRow } from "./security-types";
-export { AVAILABLE_VIEWS } from "./security-types";
+export type { UserWithRolesRow, RoleWithViewsRow, RoleSelectorRow, AccessMethod, RoleTablePermission } from "./security-types";
+export { AVAILABLE_VIEWS, AVAILABLE_TABLES, ACCESS_METHODS } from "./security-types";
 
 // ─── Users with Roles ───
 export async function getUsersWithRoles() {
@@ -53,6 +54,14 @@ export async function getRolesWithViews() {
     })
     .from(roleViews);
 
+  const allRoleTables = await db
+    .select({
+      roleId: roleTables.roleId,
+      tableName: roleTables.tableName,
+      accessMethod: roleTables.accessMethod,
+    })
+    .from(roleTables);
+
   const allUserRoles = await db
     .select({
       roleId: userRoles.roleId,
@@ -63,6 +72,12 @@ export async function getRolesWithViews() {
   return allRoles.map((r) => ({
     ...r,
     views: [...new Set(allRoleViews.filter((rv) => rv.roleId === r.id).map((rv) => rv.viewName))],
+    tables: allRoleTables
+      .filter((rt) => rt.roleId === r.id)
+      .map((rt) => ({
+        tableName: rt.tableName,
+        accessMethod: (rt.accessMethod as AccessMethod | null) ?? null,
+      })),
     userCount: new Set(allUserRoles.filter((ur) => ur.roleId === r.id).map((ur) => ur.userId)).size,
   }));
 }
