@@ -97,7 +97,22 @@ export async function getCustomers(): Promise<CustomerRow[]> {
     ORDER BY c.first_name ASC, c.last_name ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    middleName: string | null;
+    nickName: string | null;
+    suffix: string | null;
+    birthday: unknown;
+    primaryContact: string | null;
+    email: string | null;
+    carsCount: unknown;
+    address: string | null;
+    createdAt: unknown;
+  };
+
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     firstName: r.firstName,
     lastName: r.lastName,
@@ -133,7 +148,20 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
     LIMIT 1
   `);
 
-  const custArr = custRows as unknown as any[];
+  type CustRaw = {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    middleName: string | null;
+    nickName: string | null;
+    suffix: string | null;
+    birthday: unknown;
+    primaryContact: string | null;
+    email: string | null;
+    createdAt: unknown;
+    updatedAt: unknown;
+  };
+  const custArr = custRows as unknown as CustRaw[];
   if (custArr.length === 0) return null;
   const cust = custArr[0];
 
@@ -181,7 +209,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
     email: cust.email,
     createdAt: cust.createdAt ? String(cust.createdAt) : null,
     updatedAt: cust.updatedAt ? String(cust.updatedAt) : null,
-    addresses: (addrRows as unknown as any[]).map((a: any) => ({
+    addresses: (addrRows as unknown as CustomerDetailRow["addresses"]).map((a) => ({
       id: a.id,
       street: a.street,
       village: a.village,
@@ -190,11 +218,11 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
       province: a.province,
       zipCode: a.zipCode,
     })),
-    contacts: (contactRows as unknown as any[]).map((c: any) => ({
+    contacts: (contactRows as unknown as CustomerDetailRow["contacts"]).map((c) => ({
       id: c.id,
       contactNumber: c.contactNumber,
     })),
-    cars: (carRows as unknown as any[]).map((c: any) => ({
+    cars: (carRows as unknown as CustomerDetailRow["cars"]).map((c) => ({
       id: c.id,
       make: c.make,
       model: c.model,
@@ -202,7 +230,7 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
       color: c.color,
       plateNumber: c.plateNumber,
     })),
-    photos: (photoRows as unknown as any[]).map((p: any) => ({
+    photos: (photoRows as unknown as { id: string; photoUrl: string; label: string | null; createdAt: unknown }[]).map((p) => ({
       id: p.id,
       photoUrl: p.photoUrl,
       label: p.label,
@@ -220,7 +248,7 @@ export async function getCustomersForSelector(): Promise<CustomerSelectorRow[]> 
     ORDER BY first_name ASC, last_name ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: string; name: string | null }[]).map((r) => ({
     id: r.id,
     name: r.name || r.id,
   }));

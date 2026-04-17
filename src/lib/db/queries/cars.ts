@@ -30,7 +30,8 @@ export async function getCars(): Promise<CarRow[]> {
     ORDER BY ca.make ASC, ca.model ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = Omit<CarRow, "createdAt"> & { createdAt: unknown };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     make: r.make,
     model: r.model,
@@ -58,7 +59,8 @@ export async function getCarsByCustomerId(customerId: string): Promise<CarRow[]>
     ORDER BY ca.make ASC, ca.model ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = Omit<CarRow, "ownerName" | "ownerId" | "createdAt"> & { createdAt: unknown };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     make: r.make,
     model: r.model,

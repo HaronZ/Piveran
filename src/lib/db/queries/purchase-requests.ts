@@ -73,7 +73,19 @@ export async function getPurchaseRequests(): Promise<PurchaseRequestRow[]> {
     ORDER BY pr.created_at DESC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = {
+    id: string;
+    prNumber: string;
+    date: unknown;
+    statusId: unknown;
+    statusName: string | null;
+    label: string | null;
+    comment: string | null;
+    lineCount: unknown;
+    totalAmount: unknown;
+    createdAt: unknown;
+  };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     prNumber: r.prNumber,
     date: r.date ? String(r.date) : null,
@@ -107,7 +119,17 @@ export async function getPurchaseRequestById(
     LIMIT 1
   `);
 
-  const header = (headerRows as unknown as any[])[0];
+  type HeaderRaw = {
+    id: string;
+    prNumber: string;
+    date: unknown;
+    statusId: unknown;
+    statusName: string | null;
+    label: string | null;
+    comment: string | null;
+    createdAt: unknown;
+  };
+  const header = (headerRows as unknown as HeaderRaw[])[0];
   if (!header) return null;
 
   // Fetch lines
@@ -138,7 +160,26 @@ export async function getPurchaseRequestById(
     ORDER BY pl.created_at ASC
   `);
 
-  const lines: PrLineRow[] = (lineRows as unknown as any[]).map((r: any) => ({
+  type LineRaw = {
+    id: string;
+    prId: string;
+    partId: string | null;
+    partName: string | null;
+    partNumber: string | null;
+    quantity: unknown;
+    unitPrice: unknown;
+    totalPrice: unknown;
+    targetPrice: unknown;
+    totalTargetPrice: unknown;
+    projectedProfit: unknown;
+    statusId: unknown;
+    statusName: string | null;
+    comment: string | null;
+    link: string | null;
+    supplierId: string | null;
+    supplierName: string | null;
+  };
+  const lines: PrLineRow[] = (lineRows as unknown as LineRaw[]).map((r) => ({
     id: r.id,
     prId: r.prId,
     partId: r.partId || null,
@@ -179,7 +220,7 @@ export async function getPrStatuses(): Promise<PrStatusOption[]> {
   const rows = await db.execute(sql`
     SELECT id, status FROM pr_statuses ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; status: string }[]).map((r) => ({
     id: Number(r.id),
     status: r.status,
   }));
@@ -189,7 +230,7 @@ export async function getPrLineStatuses(): Promise<PrLineStatusOption[]> {
   const rows = await db.execute(sql`
     SELECT id, status FROM pr_line_statuses ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; status: string }[]).map((r) => ({
     id: Number(r.id),
     status: r.status,
   }));
@@ -207,7 +248,7 @@ export async function getNextPrNumber(): Promise<string> {
     LIMIT 1
   `);
 
-  const last = (rows as unknown as any[])[0];
+  const last = (rows as unknown as { prNumber: string }[])[0];
   if (!last) return `${prefix}0001`;
 
   const lastNum = parseInt(last.prNumber.replace(prefix, ""), 10);
@@ -227,7 +268,7 @@ export async function getPartsForSelector(): Promise<PartOption[]> {
     FROM parts
     ORDER BY name ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: string; name: string; partNumber: string | null }[]).map((r) => ({
     id: r.id,
     name: r.name,
     partNumber: r.partNumber || null,
@@ -244,7 +285,7 @@ export async function getVendorsForSelector(): Promise<VendorOption[]> {
   const rows = await db.execute(sql`
     SELECT id, name FROM vendors ORDER BY name ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: string; name: string }[]).map((r) => ({
     id: r.id,
     name: r.name,
   }));

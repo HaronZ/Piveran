@@ -70,7 +70,14 @@ export async function getParts(): Promise<PartRow[]> {
     ORDER BY p.name ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = Omit<PartRow, "criticalCount" | "includeCritical" | "currentStock" | "latestPrice" | "createdAt"> & {
+    criticalCount: unknown;
+    includeCritical: unknown;
+    currentStock: unknown;
+    latestPrice: unknown;
+    createdAt: unknown;
+  };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     name: r.name,
     brandId: r.brandId,

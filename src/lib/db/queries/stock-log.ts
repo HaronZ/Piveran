@@ -84,7 +84,32 @@ export async function getStockLogs(): Promise<StockLogRow[]> {
     ORDER BY il.date DESC, il.created_at DESC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = {
+    id: string;
+    date: unknown;
+    partId: string;
+    partName: string;
+    partNumber: string | null;
+    actionId: unknown;
+    actionName: string;
+    addMinus: unknown;
+    quantity: unknown;
+    unitId: unknown;
+    unitName: string | null;
+    unitPrice: unknown;
+    totalPrice: unknown;
+    vendorId: string | null;
+    vendorName: string | null;
+    salesTypeId: unknown;
+    salesTypeName: string | null;
+    paymentTypeId: unknown;
+    paymentTypeName: string | null;
+    payableDueDate: string | null;
+    comments: string | null;
+    addStockLink: string | null;
+    createdAt: unknown;
+  };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     date: String(r.date),
     partId: r.partId,
@@ -115,7 +140,7 @@ export async function getInventoryActions(): Promise<ActionOption[]> {
   const rows = await db.execute(sql`
     SELECT id, name, add_minus AS "addMinus" FROM inventory_actions ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; name: string; addMinus: unknown }[]).map((r) => ({
     id: Number(r.id),
     name: r.name,
     addMinus: Number(r.addMinus),
@@ -126,7 +151,7 @@ export async function getUnits(): Promise<UnitOption[]> {
   const rows = await db.execute(sql`
     SELECT id, name FROM units ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; name: string }[]).map((r) => ({
     id: Number(r.id),
     name: r.name,
   }));
@@ -136,7 +161,7 @@ export async function getSalesTypes(): Promise<SalesTypeOption[]> {
   const rows = await db.execute(sql`
     SELECT id, type FROM sales_types ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; type: string }[]).map((r) => ({
     id: Number(r.id),
     type: r.type,
   }));
@@ -146,7 +171,7 @@ export async function getPaymentTypes(): Promise<PaymentTypeOption[]> {
   const rows = await db.execute(sql`
     SELECT id, type FROM payment_types ORDER BY id ASC
   `);
-  return (rows as unknown as any[]).map((r: any) => ({
+  return (rows as unknown as { id: unknown; type: string }[]).map((r) => ({
     id: Number(r.id),
     type: r.type,
   }));
