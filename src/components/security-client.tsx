@@ -31,9 +31,12 @@ import {
 } from "@/lib/actions/security";
 import {
   AVAILABLE_VIEWS,
+  AVAILABLE_TABLES,
+  ACCESS_METHODS,
   type UserWithRolesRow,
   type RoleWithViewsRow,
   type RoleSelectorRow,
+  type AccessMethod,
 } from "@/lib/db/queries/security-types";
 
 type Tab = "users" | "roles";
@@ -414,20 +417,27 @@ function RolesTab({ roles }: { roles: RoleWithViewsRow[] }) {
                     <span className="line-clamp-1">{r.description || "—"}</span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {r.views.length > 0 ? (
-                        <>
-                          {r.views.slice(0, 3).map((v) => (
-                            <Badge key={v} variant="secondary" className="text-[10px]">
-                              {AVAILABLE_VIEWS.find((av) => av.value === v)?.label || v}
-                            </Badge>
-                          ))}
-                          {r.views.length > 3 && (
-                            <Badge variant="secondary" className="text-[10px]">+{r.views.length - 3}</Badge>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No pages</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap gap-1">
+                        {r.views.length > 0 ? (
+                          <>
+                            {r.views.slice(0, 3).map((v) => (
+                              <Badge key={v} variant="secondary" className="text-[10px]">
+                                {AVAILABLE_VIEWS.find((av) => av.value === v)?.label || v}
+                              </Badge>
+                            ))}
+                            {r.views.length > 3 && (
+                              <Badge variant="secondary" className="text-[10px]">+{r.views.length - 3}</Badge>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No pages</span>
+                        )}
+                      </div>
+                      {r.tables.length > 0 && (
+                        <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/20 self-start">
+                          {r.tables.length} table{r.tables.length === 1 ? "" : "s"}
+                        </Badge>
                       )}
                     </div>
                   </TableCell>
@@ -498,6 +508,16 @@ function RoleDialog({
 }) {
   const isEdit = !!item;
   const [checkedViews, setCheckedViews] = useState<Set<string>>(new Set(item?.views || []));
+  const [tablePerms, setTablePerms] = useState<Record<string, AccessMethod | "none">>(() => {
+    const initial: Record<string, AccessMethod | "none"> = {};
+    for (const t of AVAILABLE_TABLES) initial[t.value] = "none";
+    for (const p of item?.tables || []) {
+      if (p.accessMethod) initial[p.tableName] = p.accessMethod;
+    }
+    return initial;
+  });
+  const setTableAccess = (tableName: string, access: AccessMethod | "none") =>
+    setTablePerms((prev) => ({ ...prev, [tableName]: access }));
 
   const boundAction = item
     ? updateRole.bind(null, item.id)
@@ -603,6 +623,62 @@ function RoleDialog({
                 size="sm"
                 className="text-[10px] h-6"
                 onClick={() => setCheckedViews(new Set())}
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Table Permissions</Label>
+            <p className="text-[10px] text-muted-foreground">
+              Grant this role access to specific database tables
+            </p>
+            <div className="max-h-[260px] overflow-y-auto rounded-lg border border-border/40 bg-card/60 p-3 space-y-1.5">
+              {AVAILABLE_TABLES.map((t) => {
+                const current = tablePerms[t.value] ?? "none";
+                return (
+                  <div key={t.value} className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-mono">{t.label}</span>
+                    <select
+                      name={`table_${t.value}`}
+                      value={current}
+                      onChange={(e) => setTableAccess(t.value, e.target.value as AccessMethod | "none")}
+                      className="h-7 rounded-md border border-border/40 bg-card/80 px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+                    >
+                      <option value="none">None</option>
+                      {ACCESS_METHODS.map((a) => (
+                        <option key={a.value} value={a.value}>{a.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-[10px] h-6"
+                onClick={() => {
+                  const next: Record<string, AccessMethod | "none"> = {};
+                  for (const t of AVAILABLE_TABLES) next[t.value] = "read";
+                  setTablePerms(next);
+                }}
+              >
+                All Read
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-[10px] h-6"
+                onClick={() => {
+                  const next: Record<string, AccessMethod | "none"> = {};
+                  for (const t of AVAILABLE_TABLES) next[t.value] = "none";
+                  setTablePerms(next);
+                }}
               >
                 Clear All
               </Button>
