@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { FormError } from "@/components/form-error";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -100,11 +101,7 @@ export function PartDialog({
         </DialogHeader>
 
         <form action={formAction} className="space-y-4 mt-2">
-          {state?.error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-500">
-              {state.error}
-            </div>
-          )}
+          <FormError message={state?.error} />
 
           {/* Hidden inputs for actual IDs sent to server */}
           <input type="hidden" name="brandId" value={brandId} />

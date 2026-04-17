@@ -1,6 +1,7 @@
 "use client";
 
 import { SortIndicator } from "@/components/sort-indicator";
+import { EmptyState } from "@/components/empty-state";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -128,7 +129,7 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
       {/* Table */}
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader sticky>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead
                 className="cursor-pointer select-none"
@@ -162,8 +163,13 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
           <TableBody>
             {paged.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  {search ? "No cars match your search" : "No cars yet. Add one!"}
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={Car}
+                    title={search ? "No cars match your search" : "No cars yet"}
+                    description={search ? "Try a different keyword." : "Add your first car to get started."}
+                    iconClassName="bg-teal-500/10 text-teal-500"
+                  />
                 </TableCell>
               </TableRow>
             ) : (

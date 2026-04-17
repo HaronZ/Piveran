@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useActionState, useEffect } from "react";
+import { FormError } from "@/components/form-error";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -82,11 +83,7 @@ export function CashLogDialog({
         </DialogHeader>
 
         <form action={formAction} className="space-y-5 mt-3">
-          {state?.error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-500">
-              {state.error}
-            </div>
-          )}
+          <FormError message={state?.error} />
 
           {/* ── Section 1: Transaction ── */}
           <div className="space-y-3">

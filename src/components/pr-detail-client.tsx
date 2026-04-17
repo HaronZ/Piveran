@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PrLineDialog } from "@/components/pr-line-dialog";
 import { PrLineDetailsDialog } from "@/components/pr-line-details-dialog";
 import { PrCommentsPanel } from "@/components/pr-comments-panel";
@@ -178,6 +179,12 @@ export function PrDetailClient({
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        <Breadcrumbs
+          items={[
+            { label: "Purchase Requests", href: "/dashboard/purchase-requests" },
+            { label: pr.prNumber || "Detail" },
+          ]}
+        />
         {/* Back + Header */}
         <div className="flex items-center gap-3">
           <Link href="/dashboard/purchase-requests">

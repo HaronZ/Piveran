@@ -27,6 +27,8 @@ import {
   Clock, CheckCircle2, XCircle, Loader, User, Car, Calendar,
   Images, MessageSquare,
 } from "lucide-react";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { EmptyState } from "@/components/empty-state";
 import { JoPhotosSection } from "@/components/jo-photos-section";
 import { JoCommentsSection } from "@/components/jo-comments-section";
 import { JoMaterialDetailsDialog } from "@/components/jo-material-details-dialog";
@@ -136,6 +138,12 @@ export function JoDetailClient({
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Job Orders", href: "/dashboard/job-orders" },
+          { label: jo.joNumber || "Detail" },
+        ]}
+      />
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
@@ -322,9 +330,13 @@ function MaterialsTab({
           </TableHeader>
           <TableBody>
             {materials.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                <Package className="h-8 w-8 mx-auto text-muted-foreground/20 mb-2" />
-                No materials added
+              <TableRow><TableCell colSpan={6} className="p-0">
+                <EmptyState
+                  icon={Package}
+                  title="No materials added"
+                  description="Use the Add Material button to record parts used."
+                  iconClassName="bg-orange-500/10 text-orange-500"
+                />
               </TableCell></TableRow>
             ) : (
               materials.map((m) => {

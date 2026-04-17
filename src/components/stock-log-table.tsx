@@ -220,7 +220,7 @@ export function StockLogTable({
         <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader sticky>
                 <TableRow className="hover:bg-transparent border-border/40">
                   <TableHead
                     className="cursor-pointer select-none text-xs w-[100px]"

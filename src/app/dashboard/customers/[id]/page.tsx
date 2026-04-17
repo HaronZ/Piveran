@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getCustomerById } from "@/lib/db/queries/customers";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,14 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ArrowLeft,
-  Phone,
-  Mail,
-  Cake,
-  Car,
-  Calendar,
-} from "lucide-react";
+import { Phone, Mail, Cake, Car, Calendar } from "lucide-react";
 import { CustomerDetailClient } from "@/components/customer-detail-client";
 import { CustomerPhotosSection } from "@/components/customer-photos-section";
 import { EmptyState } from "@/components/empty-state";
@@ -44,14 +37,12 @@ export default async function CustomerDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Link
-        href="/dashboard/customers"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Customers
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Customers", href: "/dashboard/customers" },
+          { label: fullName || "Customer" },
+        ]}
+      />
 
       {/* Profile Card */}
       <Card className="border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
