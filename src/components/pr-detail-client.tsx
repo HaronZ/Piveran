@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Table,
@@ -45,10 +45,15 @@ import {
   ClipboardList,
   Truck,
   ExternalLink,
+  FileText,
+  Images,
+  MessageSquare,
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { PrLineDialog } from "@/components/pr-line-dialog";
+import { PrLineDetailsDialog } from "@/components/pr-line-details-dialog";
+import { PrCommentsPanel } from "@/components/pr-comments-panel";
 import { DeleteDialog } from "@/components/delete-dialog";
 import {
   updatePrStatus,
@@ -61,6 +66,9 @@ import type {
   PrLineStatusOption,
   PartOption,
   VendorOption,
+  PrCommentRow,
+  PrLinePhotoRow,
+  PrLineCommentRow,
 } from "@/lib/db/queries/purchase-requests";
 
 // Status badge color mapping
@@ -102,6 +110,9 @@ interface PrDetailClientProps {
   lineStatuses: PrLineStatusOption[];
   parts: PartOption[];
   vendors: VendorOption[];
+  prComments: PrCommentRow[];
+  linePhotos: PrLinePhotoRow[];
+  lineComments: PrLineCommentRow[];
 }
 
 export function PrDetailClient({
@@ -110,11 +121,35 @@ export function PrDetailClient({
   lineStatuses,
   parts,
   vendors,
+  prComments,
+  linePhotos,
+  lineComments,
 }: PrDetailClientProps) {
   const [addLineOpen, setAddLineOpen] = useState(false);
   const [editLine, setEditLine] = useState<PrLineRow | null>(null);
   const [deletingLine, setDeletingLine] = useState<PrLineRow | null>(null);
+  const [detailsLine, setDetailsLine] = useState<PrLineRow | null>(null);
   const [isUpdatingStatus, startTransition] = useTransition();
+
+  const photosByLine = useMemo(() => {
+    const m = new Map<string, PrLinePhotoRow[]>();
+    for (const p of linePhotos) {
+      const arr = m.get(p.prLineId) ?? [];
+      arr.push(p);
+      m.set(p.prLineId, arr);
+    }
+    return m;
+  }, [linePhotos]);
+
+  const commentsByLine = useMemo(() => {
+    const m = new Map<string, PrLineCommentRow[]>();
+    for (const c of lineComments) {
+      const arr = m.get(c.prLineId) ?? [];
+      arr.push(c);
+      m.set(c.prLineId, arr);
+    }
+    return m;
+  }, [lineComments]);
 
   function handleStatusChange(newStatus: string | null) {
     if (!newStatus) return;
@@ -278,7 +313,7 @@ export function PrDetailClient({
           </div>
         </div>
 
-        {/* Comments */}
+        {/* Notes */}
         {pr.comment && (
           <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md p-4">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5">
@@ -287,6 +322,9 @@ export function PrDetailClient({
             <p className="text-sm text-muted-foreground">{pr.comment}</p>
           </div>
         )}
+
+        {/* PR Comments */}
+        <PrCommentsPanel prId={pr.id} comments={prComments} />
 
         {/* Line Items Table */}
         <div className="space-y-3">
@@ -382,6 +420,27 @@ export function PrDetailClient({
                                 {line.partNumber}
                               </p>
                             )}
+                            {(() => {
+                              const ph = photosByLine.get(line.id)?.length ?? 0;
+                              const cm = commentsByLine.get(line.id)?.length ?? 0;
+                              if (!ph && !cm) return null;
+                              return (
+                                <div className="flex items-center gap-1 mt-1">
+                                  {ph > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5 bg-violet-500/10 text-violet-400 border-violet-500/20">
+                                      <Images className="h-2.5 w-2.5" />
+                                      {ph}
+                                    </Badge>
+                                  )}
+                                  {cm > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5 bg-sky-500/10 text-sky-400 border-sky-500/20">
+                                      <MessageSquare className="h-2.5 w-2.5" />
+                                      {cm}
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </TableCell>
 
@@ -464,8 +523,15 @@ export function PrDetailClient({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-36"
+                              className="w-48"
                             >
+                              <DropdownMenuItem
+                                onClick={() => setDetailsLine(line)}
+                                className="gap-2 text-sm"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Photos & Comments
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setEditLine(line)}
                                 className="gap-2 text-sm"
@@ -512,6 +578,18 @@ export function PrDetailClient({
           vendors={vendors}
           lineStatuses={lineStatuses}
         />
+
+        {/* Line Details (Photos + Comments) */}
+        {detailsLine && (
+          <PrLineDetailsDialog
+            open={!!detailsLine}
+            onOpenChange={(o) => !o && setDetailsLine(null)}
+            prId={pr.id}
+            line={detailsLine}
+            photos={photosByLine.get(detailsLine.id) ?? []}
+            comments={commentsByLine.get(detailsLine.id) ?? []}
+          />
+        )}
 
         {/* Delete Line Dialog */}
         <DeleteDialog

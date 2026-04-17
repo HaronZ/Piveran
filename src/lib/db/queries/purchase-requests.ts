@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
+import { prComments, prLines, prLineComments, prLinePhotos } from "@/lib/db/schema/vendor";
 
 export interface PrStatusOption {
   id: number;
@@ -289,4 +290,71 @@ export async function getVendorsForSelector(): Promise<VendorOption[]> {
     id: r.id,
     name: r.name,
   }));
+}
+
+// ─── PR Comments ───
+export type PrCommentRow = {
+  id: string;
+  prId: string;
+  comment: string;
+  createdAt: string | null;
+};
+
+export async function getPrComments(prId: string): Promise<PrCommentRow[]> {
+  return db
+    .select({
+      id: prComments.id,
+      prId: prComments.prId,
+      comment: prComments.comment,
+      createdAt: sql<string>`${prComments.createdAt}`.as("pr_comment_created_at"),
+    })
+    .from(prComments)
+    .where(eq(prComments.prId, prId))
+    .orderBy(desc(prComments.createdAt));
+}
+
+// ─── PR Line Photos ───
+export type PrLinePhotoRow = {
+  id: string;
+  prLineId: string;
+  photoUrl: string;
+  comment: string | null;
+  createdAt: string | null;
+};
+
+export async function getPrLinePhotos(prId: string): Promise<PrLinePhotoRow[]> {
+  return db
+    .select({
+      id: prLinePhotos.id,
+      prLineId: prLinePhotos.prLineId,
+      photoUrl: prLinePhotos.photoUrl,
+      comment: prLinePhotos.comment,
+      createdAt: sql<string>`${prLinePhotos.createdAt}`.as("pr_line_photo_created_at"),
+    })
+    .from(prLinePhotos)
+    .innerJoin(prLines, eq(prLinePhotos.prLineId, prLines.id))
+    .where(eq(prLines.prId, prId))
+    .orderBy(desc(prLinePhotos.createdAt));
+}
+
+// ─── PR Line Comments ───
+export type PrLineCommentRow = {
+  id: string;
+  prLineId: string;
+  comment: string;
+  createdAt: string | null;
+};
+
+export async function getPrLineComments(prId: string): Promise<PrLineCommentRow[]> {
+  return db
+    .select({
+      id: prLineComments.id,
+      prLineId: prLineComments.prLineId,
+      comment: prLineComments.comment,
+      createdAt: sql<string>`${prLineComments.createdAt}`.as("pr_line_comment_created_at"),
+    })
+    .from(prLineComments)
+    .innerJoin(prLines, eq(prLineComments.prLineId, prLines.id))
+    .where(eq(prLines.prId, prId))
+    .orderBy(desc(prLineComments.createdAt));
 }

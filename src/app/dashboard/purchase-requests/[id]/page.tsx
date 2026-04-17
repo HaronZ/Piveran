@@ -6,6 +6,9 @@ import {
   getPrLineStatuses,
   getPartsForSelector,
   getVendorsForSelector,
+  getPrComments,
+  getPrLinePhotos,
+  getPrLineComments,
 } from "@/lib/db/queries/purchase-requests";
 import { PrDetailClient } from "@/components/pr-detail-client";
 
@@ -14,12 +17,15 @@ export const metadata = {
 };
 
 async function PrDetailContent({ id }: { id: string }) {
-  const [pr, statuses, lineStatuses, parts, vendors] = await Promise.all([
+  const [pr, statuses, lineStatuses, parts, vendors, prComments, linePhotos, lineComments] = await Promise.all([
     getPurchaseRequestById(id),
     getPrStatuses(),
     getPrLineStatuses(),
     getPartsForSelector(),
     getVendorsForSelector(),
+    getPrComments(id),
+    getPrLinePhotos(id),
+    getPrLineComments(id),
   ]);
 
   if (!pr) return notFound();
@@ -31,6 +37,9 @@ async function PrDetailContent({ id }: { id: string }) {
       lineStatuses={lineStatuses}
       parts={parts}
       vendors={vendors}
+      prComments={prComments}
+      linePhotos={linePhotos}
+      lineComments={lineComments}
     />
   );
 }
