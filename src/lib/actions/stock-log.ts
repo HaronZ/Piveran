@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { inventoryLog } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 const stockLogSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -47,6 +48,7 @@ export async function createStockLog(
   const total = d.quantity * (d.unitPrice ?? 0);
 
   try {
+    const userId = await requireUserId();
     await db.insert(inventoryLog).values({
       date: new Date(d.date),
       partId: d.partId,
@@ -61,6 +63,8 @@ export async function createStockLog(
       payableDueDate: d.payableDueDate || null,
       comments: d.comments || null,
       addStockLink: d.addStockLink || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to create stock log entry" };
@@ -86,6 +90,7 @@ export async function updateStockLog(
   const total = d.quantity * (d.unitPrice ?? 0);
 
   try {
+    const userId = await requireUserId();
     await db
       .update(inventoryLog)
       .set({
@@ -103,6 +108,7 @@ export async function updateStockLog(
         comments: d.comments || null,
         addStockLink: d.addStockLink || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(inventoryLog.id, id));
   } catch (e: any) {

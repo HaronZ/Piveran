@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { purchaseRequests, prLines } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 // ── Schemas ──
 
@@ -49,6 +50,7 @@ export async function createPurchaseRequest(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     const result = await db
       .insert(purchaseRequests)
       .values({
@@ -57,6 +59,8 @@ export async function createPurchaseRequest(
         statusId: data.statusId || 1, // Default to "New"
         label: data.label || null,
         comment: data.comment || null,
+        createdBy: userId,
+        updatedBy: userId,
       })
       .returning({ id: purchaseRequests.id });
 
@@ -83,6 +87,7 @@ export async function updatePurchaseRequest(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(purchaseRequests)
       .set({
@@ -91,6 +96,7 @@ export async function updatePurchaseRequest(
         label: data.label || null,
         comment: data.comment || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(purchaseRequests.id, id));
   } catch (e: any) {
@@ -108,9 +114,10 @@ export async function updatePrStatus(
   statusId: number
 ): Promise<PrFormState> {
   try {
+    const userId = await requireUserId();
     await db
       .update(purchaseRequests)
-      .set({ statusId, updatedAt: new Date() })
+      .set({ statusId, updatedAt: new Date(), updatedBy: userId })
       .where(eq(purchaseRequests.id, id));
   } catch (e: any) {
     return { error: e.message || "Failed to update status" };
@@ -159,6 +166,7 @@ export async function addPrLine(
   const profit = totalTarget - total;
 
   try {
+    const userId = await requireUserId();
     await db.insert(prLines).values({
       prId,
       partId: data.partId || null,
@@ -172,6 +180,8 @@ export async function addPrLine(
       comment: data.comment || null,
       link: data.link || null,
       supplierId: data.supplierId || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to add line item" };
@@ -204,6 +214,7 @@ export async function updatePrLine(
   const profit = totalTarget - total;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(prLines)
       .set({
@@ -219,6 +230,7 @@ export async function updatePrLine(
         link: data.link || null,
         supplierId: data.supplierId || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(prLines.id, lineId));
   } catch (e: any) {

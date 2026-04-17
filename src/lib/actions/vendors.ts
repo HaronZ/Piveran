@@ -2,9 +2,10 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { vendors, vendorContacts } from "@/lib/db/schema/vendor";
+import { vendors } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 const vendorSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -33,12 +34,15 @@ export async function createVendor(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db.insert(vendors).values({
       name: data.name,
       address: data.address || null,
       contactNumber: data.contactNumber || null,
       link: data.link || null,
       comments: data.comments || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to create vendor" };
@@ -64,6 +68,7 @@ export async function updateVendor(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(vendors)
       .set({
@@ -73,6 +78,7 @@ export async function updateVendor(
         link: data.link || null,
         comments: data.comments || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(vendors.id, id));
   } catch (e: any) {

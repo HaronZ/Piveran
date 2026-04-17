@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { users, roles, userRoles, roleViews, roleTables } from "@/lib/db/schema/security";
+import { users, roles, userRoles, roleViews } from "@/lib/db/schema/security";
 import { eq, sql, asc, desc } from "drizzle-orm";
 
 // Re-export types from the shared file (safe for client imports)

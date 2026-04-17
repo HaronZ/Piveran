@@ -5,6 +5,7 @@ import { laborTypes, laborPrices } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUserId } from "@/lib/auth/actions";
 
 export type ServiceFormState = { success?: boolean; error?: string };
 
@@ -22,12 +23,15 @@ export async function createLaborType(
   const parsed = laborTypeSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const userId = await requireUserId();
   const newType = await db
     .insert(laborTypes)
     .values({
       name: parsed.data.name,
       description: parsed.data.description || null,
       defaultPrice: parsed.data.defaultPrice || null,
+      createdBy: userId,
+      updatedBy: userId,
     })
     .returning({ id: laborTypes.id });
 
@@ -36,6 +40,8 @@ export async function createLaborType(
     await db.insert(laborPrices).values({
       laborTypeId: newType[0].id,
       price: parsed.data.defaultPrice,
+      createdBy: userId,
+      updatedBy: userId,
     });
   }
 
@@ -62,6 +68,7 @@ export async function updateLaborType(
   const oldPrice = current[0]?.defaultPrice;
   const newPrice = parsed.data.defaultPrice || null;
 
+  const userId = await requireUserId();
   await db
     .update(laborTypes)
     .set({
@@ -69,6 +76,7 @@ export async function updateLaborType(
       description: parsed.data.description || null,
       defaultPrice: newPrice,
       updatedAt: new Date(),
+      updatedBy: userId,
     })
     .where(eq(laborTypes.id, id));
 
@@ -77,6 +85,8 @@ export async function updateLaborType(
     await db.insert(laborPrices).values({
       laborTypeId: id,
       price: newPrice,
+      createdBy: userId,
+      updatedBy: userId,
     });
   }
 
