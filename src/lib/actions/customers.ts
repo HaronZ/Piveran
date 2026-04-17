@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -77,8 +78,8 @@ export async function createCustomer(
         updatedBy: userId,
       });
     }
-  } catch (e: any) {
-    return { error: e.message || "Failed to create customer" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to create customer") };
   }
 
   revalidatePath("/dashboard/customers");
@@ -134,8 +135,8 @@ export async function updateCustomer(
         updatedBy: userId,
       });
     }
-  } catch (e: any) {
-    return { error: e.message || "Failed to update customer" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update customer") };
   }
 
   revalidatePath("/dashboard/customers");
@@ -156,8 +157,8 @@ export async function deleteCustomer(id: string): Promise<CustomerFormState> {
     if (photos.length > 0) {
       await deleteMediaByUrl(photos.map((p) => p.photoUrl)).catch(() => {});
     }
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete customer" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete customer") };
   }
 
   revalidatePath("/dashboard/customers");
@@ -179,8 +180,8 @@ export async function addContact(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to add contact" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add contact") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };
@@ -192,8 +193,8 @@ export async function deleteContact(
 ): Promise<CustomerFormState> {
   try {
     await db.delete(customerContacts).where(eq(customerContacts.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete contact" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete contact") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };
@@ -228,8 +229,8 @@ export async function addAddress(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to add address" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add address") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };
@@ -241,8 +242,8 @@ export async function deleteAddress(
 ): Promise<CustomerFormState> {
   try {
     await db.delete(customerAddresses).where(eq(customerAddresses.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete address" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete address") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };
@@ -263,8 +264,8 @@ export async function addCustomerPhoto(
       label: label?.trim() || null,
       createdBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to add photo" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add photo") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };
@@ -278,8 +279,8 @@ export async function deleteCustomerPhoto(
   try {
     await db.delete(customerPhotos).where(eq(customerPhotos.id, id));
     await deleteMediaByUrl([photoUrl]).catch(() => {});
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete photo" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete photo") };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };

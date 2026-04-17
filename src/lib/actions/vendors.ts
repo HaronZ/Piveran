@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -44,8 +45,8 @@ export async function createVendor(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to create vendor" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to create vendor") };
   }
 
   revalidatePath("/dashboard/vendors");
@@ -81,8 +82,8 @@ export async function updateVendor(
         updatedBy: userId,
       })
       .where(eq(vendors.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update vendor" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update vendor") };
   }
 
   revalidatePath("/dashboard/vendors");
@@ -93,8 +94,8 @@ export async function updateVendor(
 export async function deleteVendor(id: string): Promise<VendorFormState> {
   try {
     await db.delete(vendors).where(eq(vendors.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete vendor" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete vendor") };
   }
 
   revalidatePath("/dashboard/vendors");

@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -50,8 +51,8 @@ export async function createCar(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to add car" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add car") };
   }
 
   revalidatePath("/dashboard/cars");
@@ -89,8 +90,8 @@ export async function updateCar(
         updatedBy: userId,
       })
       .where(eq(cars.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update car" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update car") };
   }
 
   revalidatePath("/dashboard/cars");
@@ -102,8 +103,8 @@ export async function updateCar(
 export async function deleteCar(id: string): Promise<CarFormState> {
   try {
     await db.delete(cars).where(eq(cars.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete car" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete car") };
   }
 
   revalidatePath("/dashboard/cars");
