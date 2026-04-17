@@ -6,6 +6,8 @@ import {
   getJoLabors,
   getJoPayments,
   getJoLaborMechanics,
+  getJoPhotos,
+  getJoComments,
   getLaborTypes,
   getJoMaterialStatuses,
   getJoLaborStatuses,
@@ -26,6 +28,8 @@ async function JoDetailContent({ id }: { id: string }) {
     labors,
     payments,
     laborMechanics,
+    photos,
+    comments,
     parts,
     laborTypes,
     materialStatuses,
@@ -38,6 +42,8 @@ async function JoDetailContent({ id }: { id: string }) {
     getJoLabors(id),
     getJoPayments(id),
     getJoLaborMechanics(id),
+    getJoPhotos(id),
+    getJoComments(id),
     getPartsForSelector(),
     getLaborTypes(),
     getJoMaterialStatuses(),
@@ -55,6 +61,8 @@ async function JoDetailContent({ id }: { id: string }) {
       labors={labors}
       payments={payments}
       laborMechanics={laborMechanics}
+      photos={photos}
+      comments={comments}
       parts={parts}
       laborTypes={laborTypes}
       materialStatuses={materialStatuses}

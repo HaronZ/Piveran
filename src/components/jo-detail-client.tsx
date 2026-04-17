@@ -25,7 +25,10 @@ import {
   ArrowLeft, ClipboardList, Package, Wrench, CreditCard,
   Plus, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign,
   Clock, CheckCircle2, XCircle, Loader, User, Car, Calendar,
+  Images, MessageSquare,
 } from "lucide-react";
+import { JoPhotosSection } from "@/components/jo-photos-section";
+import { JoCommentsSection } from "@/components/jo-comments-section";
 import { toast } from "sonner";
 import { DeleteDialog } from "@/components/delete-dialog";
 import {
@@ -35,7 +38,7 @@ import {
 } from "@/lib/actions/jo-detail";
 import type {
   JoDetailRow, JoMaterialRow, JoLaborRow, JoPaymentRow,
-  JoLaborMechanicRow, LaborTypeRow,
+  JoLaborMechanicRow, JoPhotoRow, JoCommentRow, LaborTypeRow,
   JoMaterialStatusRow, JoLaborStatusRow, CashierRow,
 } from "@/lib/db/queries/jo-detail";
 import type { PartOption } from "@/lib/db/queries/purchase-requests";
@@ -58,7 +61,7 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
 }
 
-type Tab = "materials" | "labors" | "payments";
+type Tab = "materials" | "labors" | "payments" | "photos" | "comments";
 
 interface JoDetailClientProps {
   jo: JoDetailRow;
@@ -66,6 +69,8 @@ interface JoDetailClientProps {
   labors: JoLaborRow[];
   payments: JoPaymentRow[];
   laborMechanics: JoLaborMechanicRow[];
+  photos: JoPhotoRow[];
+  comments: JoCommentRow[];
   parts: PartOption[];
   laborTypes: LaborTypeRow[];
   materialStatuses: JoMaterialStatusRow[];
@@ -80,6 +85,8 @@ export function JoDetailClient({
   labors,
   payments,
   laborMechanics,
+  photos,
+  comments,
   parts,
   laborTypes,
   materialStatuses,
@@ -110,6 +117,8 @@ export function JoDetailClient({
     { key: "materials", label: "Materials", icon: <Package className="h-4 w-4" />, count: materials.length },
     { key: "labors", label: "Labors", icon: <Wrench className="h-4 w-4" />, count: labors.length },
     { key: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" />, count: payments.length },
+    { key: "photos", label: "Photos", icon: <Images className="h-4 w-4" />, count: photos.length },
+    { key: "comments", label: "Comments", icon: <MessageSquare className="h-4 w-4" />, count: comments.length },
   ];
 
   return (
@@ -230,6 +239,8 @@ export function JoDetailClient({
           cashiers={cashiers}
         />
       )}
+      {tab === "photos" && <JoPhotosSection joId={jo.id} photos={photos} />}
+      {tab === "comments" && <JoCommentsSection joId={jo.id} comments={comments} />}
     </div>
   );
 }
