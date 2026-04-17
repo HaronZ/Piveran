@@ -139,7 +139,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
     });
 
     return rows;
-  }, [parts, search, brandFilter, showCriticalOnly, sortKey, sortDir]);
+  }, [parts, search, brandFilter, showCriticalOnly, sortKey, sortDir, brands]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

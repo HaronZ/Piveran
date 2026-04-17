@@ -181,7 +181,7 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
                       <div>
                         <p className="font-semibold text-sm">{fullName(m)}</p>
                         {m.nickName && (
-                          <p className="text-[10px] text-muted-foreground">"{m.nickName}"</p>
+                          <p className="text-[10px] text-muted-foreground">&ldquo;{m.nickName}&rdquo;</p>
                         )}
                       </div>
                     </div>
