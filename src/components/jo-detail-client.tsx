@@ -652,6 +652,15 @@ function LaborDialog({
   const [laborTypeId, setLaborTypeId] = useState(item?.laborTypeId || "");
   const [statusId, setStatusId] = useState(item?.statusId?.toString() || "");
   const [price, setPrice] = useState(item?.price || "");
+  const [laborSearch, setLaborSearch] = useState(
+    item?.laborTypeId ? laborTypes.find((l) => l.id === item.laborTypeId)?.name || "" : ""
+  );
+
+  const filteredLaborTypes = useMemo(() => {
+    if (!laborSearch.trim()) return laborTypes.slice(0, 50);
+    const q = laborSearch.toLowerCase();
+    return laborTypes.filter((l) => l.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [laborTypes, laborSearch]);
 
   const boundAction = item
     ? updateJoLabor.bind(null, item.id, joId)
@@ -684,21 +693,34 @@ function LaborDialog({
           <input type="hidden" name="laborTypeId" value={laborTypeId} />
           <div className="space-y-1.5">
             <Label className="text-xs">Service Type <span className="text-red-500">*</span></Label>
-            <Select value={laborTypeId} onValueChange={(val) => { if (val) handleLaborTypeChange(val); }}>
-              <SelectTrigger className="border-border/40 bg-card/60">
-                <SelectValue placeholder="Select service">
-                  {laborTypeId ? laborTypes.find((lt) => lt.id === laborTypeId)?.name : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl max-h-[200px]">
-                {laborTypes.map((lt) => (
-                  <SelectItem key={lt.id} value={lt.id}>
-                    {lt.name}
-                    {lt.defaultPrice && <span className="text-muted-foreground ml-2">({fmt(lt.defaultPrice)})</span>}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              placeholder="Search service..."
+              value={laborSearch}
+              onChange={(e) => setLaborSearch(e.target.value)}
+              className="border-border/40 bg-card/60 mb-1"
+            />
+            <div className="max-h-[160px] overflow-y-auto rounded-md border border-border/40 bg-card/60">
+              {filteredLaborTypes.length === 0 ? (
+                <div className="p-3 text-xs text-muted-foreground text-center">No services found</div>
+              ) : (
+                filteredLaborTypes.map((lt) => (
+                  <button
+                    key={lt.id}
+                    type="button"
+                    onClick={() => {
+                      handleLaborTypeChange(lt.id);
+                      setLaborSearch(lt.name);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-orange-500/10 transition-colors border-b border-border/20 last:border-0 ${laborTypeId === lt.id ? "bg-orange-500/10 text-orange-500" : ""}`}
+                  >
+                    <div className="line-clamp-1 font-medium">{lt.name}</div>
+                    {lt.defaultPrice && (
+                      <div className="text-[10px] text-muted-foreground font-mono">{fmt(lt.defaultPrice)}</div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
