@@ -469,7 +469,11 @@ function MaterialDialog({
             <Label className="text-xs">Status</Label>
             <input type="hidden" name="statusId" value={statusId} />
             <Select value={statusId} onValueChange={(val) => { if (val) setStatusId(val); }}>
-              <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Select status" /></SelectTrigger>
+              <SelectTrigger className="border-border/40 bg-card/60">
+                <SelectValue placeholder="Select status">
+                  {statusId ? statuses.find((s) => s.id.toString() === statusId)?.status : undefined}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
                 {statuses.map((s) => <SelectItem key={s.id} value={s.id.toString()}>{s.status}</SelectItem>)}
               </SelectContent>
@@ -668,7 +672,11 @@ function LaborDialog({
           <div className="space-y-1.5">
             <Label className="text-xs">Service Type <span className="text-red-500">*</span></Label>
             <Select value={laborTypeId} onValueChange={(val) => { if (val) handleLaborTypeChange(val); }}>
-              <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Select service" /></SelectTrigger>
+              <SelectTrigger className="border-border/40 bg-card/60">
+                <SelectValue placeholder="Select service">
+                  {laborTypeId ? laborTypes.find((lt) => lt.id === laborTypeId)?.name : undefined}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl max-h-[200px]">
                 {laborTypes.map((lt) => (
                   <SelectItem key={lt.id} value={lt.id}>
@@ -696,7 +704,11 @@ function LaborDialog({
               <Label className="text-xs">Status</Label>
               <input type="hidden" name="statusId" value={statusId} />
               <Select value={statusId} onValueChange={(val) => { if (val) setStatusId(val); }}>
-                <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectTrigger className="border-border/40 bg-card/60">
+                  <SelectValue placeholder="Status">
+                    {statusId ? statuses.find((s) => s.id.toString() === statusId)?.status : undefined}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
                   {statuses.map((s) => <SelectItem key={s.id} value={s.id.toString()}>{s.status}</SelectItem>)}
                 </SelectContent>
