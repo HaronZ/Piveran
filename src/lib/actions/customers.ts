@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { customers, customerAddresses, customerContacts, customerPhotos } from "@/lib/db/schema/garage";
-import { deleteMediaByUrl } from "@/lib/supabase/storage";
+import { deleteMediaByUrl } from "@/lib/supabase/storage-server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth/actions";
@@ -146,7 +146,16 @@ export async function updateCustomer(
 
 export async function deleteCustomer(id: string): Promise<CustomerFormState> {
   try {
+    const photos = await db
+      .select({ photoUrl: customerPhotos.photoUrl })
+      .from(customerPhotos)
+      .where(eq(customerPhotos.customerId, id));
+
     await db.delete(customers).where(eq(customers.id, id));
+
+    if (photos.length > 0) {
+      await deleteMediaByUrl(photos.map((p) => p.photoUrl)).catch(() => {});
+    }
   } catch (e: any) {
     return { error: e.message || "Failed to delete customer" };
   }

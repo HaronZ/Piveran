@@ -1,5 +1,4 @@
 import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
-import { createClient as createServerSupabase } from "@/lib/supabase/server";
 
 export const BUCKET = "sir-keith-media";
 
@@ -84,21 +83,9 @@ export async function uploadMedia(
   return { path, publicUrl: data.publicUrl };
 }
 
-export async function deleteMediaByPath(paths: string[]): Promise<void> {
-  if (paths.length === 0) return;
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.storage.from(BUCKET).remove(paths);
-  if (error) throw new Error(error.message);
-}
-
 export function pathFromPublicUrl(url: string): string | null {
   const marker = `/${BUCKET}/`;
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
   return url.slice(idx + marker.length);
-}
-
-export async function deleteMediaByUrl(urls: string[]): Promise<void> {
-  const paths = urls.map(pathFromPublicUrl).filter((p): p is string => !!p);
-  await deleteMediaByPath(paths);
 }
