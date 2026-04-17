@@ -1,10 +1,33 @@
 import { db } from "@/lib/db";
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 import {
   parts,
   brands,
   cabinetCodes,
+  partsPhotos,
 } from "@/lib/db/schema/vendor";
+
+export type PartPhotoRow = {
+  id: string;
+  partId: string;
+  photoUrl: string;
+  notes: string | null;
+  date: string | null;
+};
+
+export async function getPartPhotos(partId: string): Promise<PartPhotoRow[]> {
+  return db
+    .select({
+      id: partsPhotos.id,
+      partId: partsPhotos.partId,
+      photoUrl: partsPhotos.photoUrl,
+      notes: partsPhotos.notes,
+      date: sql<string>`${partsPhotos.date}`.as("pp_date"),
+    })
+    .from(partsPhotos)
+    .where(eq(partsPhotos.partId, partId))
+    .orderBy(desc(partsPhotos.date));
+}
 
 export interface PartRow {
   id: string;

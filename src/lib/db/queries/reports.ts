@@ -128,14 +128,16 @@ export type ReportKPIs = {
 };
 
 export async function getReportKPIs(): Promise<ReportKPIs> {
-  const partsCount = await db.select({ v: sql<number>`count(*)` }).from(parts);
-  const supplierLinks = await db.select({ v: sql<number>`count(*)` }).from(partsSuppliers);
-  const audits = await db.select({ v: sql<number>`count(*)` }).from(partsAudit);
-  const latestVal = await db
-    .select({ value: inventoryValue.currentValue })
-    .from(inventoryValue)
-    .orderBy(desc(inventoryValue.date))
-    .limit(1);
+  const [partsCount, supplierLinks, audits, latestVal] = await Promise.all([
+    db.select({ v: sql<number>`count(*)` }).from(parts),
+    db.select({ v: sql<number>`count(*)` }).from(partsSuppliers),
+    db.select({ v: sql<number>`count(*)` }).from(partsAudit),
+    db
+      .select({ value: inventoryValue.currentValue })
+      .from(inventoryValue)
+      .orderBy(desc(inventoryValue.date))
+      .limit(1),
+  ]);
 
   return {
     totalParts: Number(partsCount[0]?.v ?? 0),

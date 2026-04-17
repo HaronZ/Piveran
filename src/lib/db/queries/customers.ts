@@ -165,37 +165,32 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
   if (custArr.length === 0) return null;
   const cust = custArr[0];
 
-  // Addresses
-  const addrRows = await db.execute(sql`
-    SELECT id, street, village, barangay, city, province, zip_code AS "zipCode"
-    FROM customer_addresses
-    WHERE customer_id = ${id}
-    ORDER BY created_at ASC
-  `);
-
-  // Contacts
-  const contactRows = await db.execute(sql`
-    SELECT id, contact_number AS "contactNumber"
-    FROM customer_contacts
-    WHERE customer_id = ${id}
-    ORDER BY created_at ASC
-  `);
-
-  // Cars
-  const carRows = await db.execute(sql`
-    SELECT id, make, model, year, color, plate_number AS "plateNumber"
-    FROM cars
-    WHERE primary_owner_id = ${id}
-    ORDER BY make ASC, model ASC
-  `);
-
-  // Photos
-  const photoRows = await db.execute(sql`
-    SELECT id, photo_url AS "photoUrl", label, created_at AS "createdAt"
-    FROM customer_photos
-    WHERE customer_id = ${id}
-    ORDER BY created_at DESC
-  `);
+  const [addrRows, contactRows, carRows, photoRows] = await Promise.all([
+    db.execute(sql`
+      SELECT id, street, village, barangay, city, province, zip_code AS "zipCode"
+      FROM customer_addresses
+      WHERE customer_id = ${id}
+      ORDER BY created_at ASC
+    `),
+    db.execute(sql`
+      SELECT id, contact_number AS "contactNumber"
+      FROM customer_contacts
+      WHERE customer_id = ${id}
+      ORDER BY created_at ASC
+    `),
+    db.execute(sql`
+      SELECT id, make, model, year, color, plate_number AS "plateNumber"
+      FROM cars
+      WHERE primary_owner_id = ${id}
+      ORDER BY make ASC, model ASC
+    `),
+    db.execute(sql`
+      SELECT id, photo_url AS "photoUrl", label, created_at AS "createdAt"
+      FROM customer_photos
+      WHERE customer_id = ${id}
+      ORDER BY created_at DESC
+    `),
+  ]);
 
   return {
     id: cust.id,

@@ -25,7 +25,13 @@ import {
   ArrowLeft, ClipboardList, Package, Wrench, CreditCard,
   Plus, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign,
   Clock, CheckCircle2, XCircle, Loader, User, Car, Calendar,
+  Images, MessageSquare,
 } from "lucide-react";
+import { JoPhotosSection } from "@/components/jo-photos-section";
+import { JoCommentsSection } from "@/components/jo-comments-section";
+import { JoMaterialDetailsDialog } from "@/components/jo-material-details-dialog";
+import { JoLaborDetailsDialog } from "@/components/jo-labor-details-dialog";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteDialog } from "@/components/delete-dialog";
 import {
@@ -35,8 +41,10 @@ import {
 } from "@/lib/actions/jo-detail";
 import type {
   JoDetailRow, JoMaterialRow, JoLaborRow, JoPaymentRow,
-  JoLaborMechanicRow, LaborTypeRow,
+  JoLaborMechanicRow, JoPhotoRow, JoCommentRow, LaborTypeRow,
   JoMaterialStatusRow, JoLaborStatusRow, CashierRow,
+  JoMaterialPhotoRow, JoMaterialCommentRow,
+  JoLaborPhotoRow, JoLaborCommentRow,
 } from "@/lib/db/queries/jo-detail";
 import type { PartOption } from "@/lib/db/queries/purchase-requests";
 import type { MechanicSelectorRow } from "@/lib/db/queries/mechanics";
@@ -58,7 +66,7 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
 }
 
-type Tab = "materials" | "labors" | "payments";
+type Tab = "materials" | "labors" | "payments" | "photos" | "comments";
 
 interface JoDetailClientProps {
   jo: JoDetailRow;
@@ -66,6 +74,12 @@ interface JoDetailClientProps {
   labors: JoLaborRow[];
   payments: JoPaymentRow[];
   laborMechanics: JoLaborMechanicRow[];
+  photos: JoPhotoRow[];
+  comments: JoCommentRow[];
+  materialPhotos: JoMaterialPhotoRow[];
+  materialComments: JoMaterialCommentRow[];
+  laborPhotos: JoLaborPhotoRow[];
+  laborComments: JoLaborCommentRow[];
   parts: PartOption[];
   laborTypes: LaborTypeRow[];
   materialStatuses: JoMaterialStatusRow[];
@@ -80,6 +94,12 @@ export function JoDetailClient({
   labors,
   payments,
   laborMechanics,
+  photos,
+  comments,
+  materialPhotos,
+  materialComments,
+  laborPhotos,
+  laborComments,
   parts,
   laborTypes,
   materialStatuses,
@@ -110,6 +130,8 @@ export function JoDetailClient({
     { key: "materials", label: "Materials", icon: <Package className="h-4 w-4" />, count: materials.length },
     { key: "labors", label: "Labors", icon: <Wrench className="h-4 w-4" />, count: labors.length },
     { key: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" />, count: payments.length },
+    { key: "photos", label: "Photos", icon: <Images className="h-4 w-4" />, count: photos.length },
+    { key: "comments", label: "Comments", icon: <MessageSquare className="h-4 w-4" />, count: comments.length },
   ];
 
   return (
@@ -210,6 +232,8 @@ export function JoDetailClient({
         <MaterialsTab
           joId={jo.id}
           materials={materials}
+          materialPhotos={materialPhotos}
+          materialComments={materialComments}
           parts={parts}
           statuses={materialStatuses}
         />
@@ -221,6 +245,8 @@ export function JoDetailClient({
           laborTypes={laborTypes}
           statuses={laborStatuses}
           laborMechanics={laborMechanics}
+          laborPhotos={laborPhotos}
+          laborComments={laborComments}
         />
       )}
       {tab === "payments" && (
@@ -230,6 +256,8 @@ export function JoDetailClient({
           cashiers={cashiers}
         />
       )}
+      {tab === "photos" && <JoPhotosSection joId={jo.id} photos={photos} />}
+      {tab === "comments" && <JoCommentsSection joId={jo.id} comments={comments} />}
     </div>
   );
 }
@@ -238,16 +266,39 @@ export function JoDetailClient({
 //  MATERIALS TAB
 // ═══════════════════════════════════════
 function MaterialsTab({
-  joId, materials, parts, statuses,
+  joId, materials, materialPhotos, materialComments, parts, statuses,
 }: {
   joId: string;
   materials: JoMaterialRow[];
+  materialPhotos: JoMaterialPhotoRow[];
+  materialComments: JoMaterialCommentRow[];
   parts: PartOption[];
   statuses: JoMaterialStatusRow[];
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<JoMaterialRow | null>(null);
   const [delItem, setDelItem] = useState<JoMaterialRow | null>(null);
+  const [detailsItem, setDetailsItem] = useState<JoMaterialRow | null>(null);
+
+  const photosByMat = useMemo(() => {
+    const m = new Map<string, JoMaterialPhotoRow[]>();
+    for (const p of materialPhotos) {
+      const arr = m.get(p.joMaterialId) ?? [];
+      arr.push(p);
+      m.set(p.joMaterialId, arr);
+    }
+    return m;
+  }, [materialPhotos]);
+
+  const commentsByMat = useMemo(() => {
+    const m = new Map<string, JoMaterialCommentRow[]>();
+    for (const c of materialComments) {
+      const arr = m.get(c.joMaterialId) ?? [];
+      arr.push(c);
+      m.set(c.joMaterialId, arr);
+    }
+    return m;
+  }, [materialComments]);
 
   return (
     <div className="space-y-3">
@@ -276,11 +327,26 @@ function MaterialsTab({
                 No materials added
               </TableCell></TableRow>
             ) : (
-              materials.map((m) => (
+              materials.map((m) => {
+                const pCount = photosByMat.get(m.id)?.length ?? 0;
+                const cCount = commentsByMat.get(m.id)?.length ?? 0;
+                return (
                 <TableRow key={m.id} className="border-border/40 hover:bg-orange-500/5">
                   <TableCell className="text-sm">
                     <div className="line-clamp-1 font-medium">{m.partName || "Unknown Part"}</div>
-                    {m.partNumber && <div className="text-[10px] text-muted-foreground font-mono">{m.partNumber}</div>}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {m.partNumber && <span className="text-[10px] text-muted-foreground font-mono">{m.partNumber}</span>}
+                      {pCount > 0 && (
+                        <span className="text-[10px] text-violet-500 flex items-center gap-0.5">
+                          <Images className="h-3 w-3" />{pCount}
+                        </span>
+                      )}
+                      {cCount > 0 && (
+                        <span className="text-[10px] text-sky-500 flex items-center gap-0.5">
+                          <MessageSquare className="h-3 w-3" />{cCount}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right text-sm font-mono">{fmt(m.price)}</TableCell>
                   <TableCell className="text-center text-sm">{m.quantity ?? 1}</TableCell>
@@ -292,13 +358,15 @@ function MaterialsTab({
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                        <DropdownMenuItem onClick={() => setDetailsItem(m)}><FileText className="h-4 w-4 mr-2" />Photos & Comments</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditItem(m)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setDelItem(m)} className="text-red-500 focus:text-red-500"><Trash2 className="h-4 w-4 mr-2" />Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -307,6 +375,16 @@ function MaterialsTab({
       <MaterialDialog open={addOpen} onOpenChange={setAddOpen} joId={joId} parts={parts} statuses={statuses} />
       {editItem && <MaterialDialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }} joId={joId} item={editItem} parts={parts} statuses={statuses} />}
       {delItem && <DeleteDialog open={!!delItem} onOpenChange={(o) => { if (!o) setDelItem(null); }} title="Delete Material" description={`Remove "${delItem.partName}"?`} onConfirm={async () => { await deleteJoMaterial(delItem.id, joId); }} />}
+      {detailsItem && (
+        <JoMaterialDetailsDialog
+          open={!!detailsItem}
+          onOpenChange={(o) => { if (!o) setDetailsItem(null); }}
+          joId={joId}
+          material={detailsItem}
+          photos={photosByMat.get(detailsItem.id) ?? []}
+          comments={commentsByMat.get(detailsItem.id) ?? []}
+        />
+      )}
     </div>
   );
 }
@@ -391,7 +469,11 @@ function MaterialDialog({
             <Label className="text-xs">Status</Label>
             <input type="hidden" name="statusId" value={statusId} />
             <Select value={statusId} onValueChange={(val) => { if (val) setStatusId(val); }}>
-              <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Select status" /></SelectTrigger>
+              <SelectTrigger className="border-border/40 bg-card/60">
+                <SelectValue placeholder="Select status">
+                  {statusId ? statuses.find((s) => s.id.toString() === statusId)?.status : undefined}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
                 {statuses.map((s) => <SelectItem key={s.id} value={s.id.toString()}>{s.status}</SelectItem>)}
               </SelectContent>
@@ -417,17 +499,40 @@ function MaterialDialog({
 //  LABORS TAB
 // ═══════════════════════════════════════
 function LaborsTab({
-  joId, labors, laborTypes, statuses, laborMechanics,
+  joId, labors, laborTypes, statuses, laborMechanics, laborPhotos, laborComments,
 }: {
   joId: string;
   labors: JoLaborRow[];
   laborTypes: LaborTypeRow[];
   statuses: JoLaborStatusRow[];
   laborMechanics: JoLaborMechanicRow[];
+  laborPhotos: JoLaborPhotoRow[];
+  laborComments: JoLaborCommentRow[];
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<JoLaborRow | null>(null);
   const [delItem, setDelItem] = useState<JoLaborRow | null>(null);
+  const [detailsItem, setDetailsItem] = useState<JoLaborRow | null>(null);
+
+  const photosByLabor = useMemo(() => {
+    const m = new Map<string, JoLaborPhotoRow[]>();
+    for (const p of laborPhotos) {
+      const arr = m.get(p.joLaborId) ?? [];
+      arr.push(p);
+      m.set(p.joLaborId, arr);
+    }
+    return m;
+  }, [laborPhotos]);
+
+  const commentsByLabor = useMemo(() => {
+    const m = new Map<string, JoLaborCommentRow[]>();
+    for (const c of laborComments) {
+      const arr = m.get(c.joLaborId) ?? [];
+      arr.push(c);
+      m.set(c.joLaborId, arr);
+    }
+    return m;
+  }, [laborComments]);
 
   return (
     <div className="space-y-3">
@@ -437,8 +542,8 @@ function LaborsTab({
         </Button>
       </div>
 
-      <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
-        <Table>
+      <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-x-auto">
+        <Table className="w-full">
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead>Service</TableHead>
@@ -459,22 +564,54 @@ function LaborsTab({
             ) : (
               labors.map((l) => {
                 const mechs = laborMechanics.filter((m) => m.joLaborId === l.id);
+                const pCount = photosByLabor.get(l.id)?.length ?? 0;
+                const cCount = commentsByLabor.get(l.id)?.length ?? 0;
                 return (
                   <TableRow key={l.id} className="border-border/40 hover:bg-orange-500/5">
-                    <TableCell className="text-sm font-medium">{l.laborTypeName || "Custom"}</TableCell>
+                    <TableCell className="text-sm">
+                      <div className="font-medium">{l.laborTypeName || "Custom"}</div>
+                      {(pCount > 0 || cCount > 0) && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {pCount > 0 && (
+                            <span className="text-[10px] text-violet-500 flex items-center gap-0.5">
+                              <Images className="h-3 w-3" />{pCount}
+                            </span>
+                          )}
+                          {cCount > 0 && (
+                            <span className="text-[10px] text-sky-500 flex items-center gap-0.5">
+                              <MessageSquare className="h-3 w-3" />{cCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right text-sm font-mono">{fmt(l.price)}</TableCell>
                     <TableCell className="text-right text-sm font-mono text-muted-foreground">{l.discount && parseFloat(l.discount) > 0 ? fmt(l.discount) : "—"}</TableCell>
                     <TableCell className="text-right text-sm font-mono font-semibold">{fmt(l.totalPrice)}</TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {l.statusName && <Badge variant="secondary" className="text-[10px]">{l.statusName}</Badge>}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                      {mechs.length > 0 ? mechs.map((m) => m.mechanicName).join(", ") : "—"}
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[260px]">
+                      {mechs.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {mechs.slice(0, 2).map((m) => (
+                            <Badge key={m.id} variant="secondary" className="text-[10px] font-normal">
+                              {m.mechanicName}
+                            </Badge>
+                          ))}
+                          {mechs.length > 2 && (
+                            <Badge variant="secondary" className="text-[10px] font-normal" title={mechs.slice(2).map((m) => m.mechanicName).join(", ")}>
+                              +{mechs.length - 2} more
+                            </Badge>
+                          )}
+                        </div>
+                      ) : "—"}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                          <DropdownMenuItem onClick={() => setDetailsItem(l)}><FileText className="h-4 w-4 mr-2" />Photos & Comments</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditItem(l)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDelItem(l)} className="text-red-500 focus:text-red-500"><Trash2 className="h-4 w-4 mr-2" />Delete</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -491,6 +628,16 @@ function LaborsTab({
       <LaborDialog open={addOpen} onOpenChange={setAddOpen} joId={joId} laborTypes={laborTypes} statuses={statuses} />
       {editItem && <LaborDialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }} joId={joId} item={editItem} laborTypes={laborTypes} statuses={statuses} />}
       {delItem && <DeleteDialog open={!!delItem} onOpenChange={(o) => { if (!o) setDelItem(null); }} title="Delete Labor" description={`Remove "${delItem.laborTypeName}"?`} onConfirm={async () => { await deleteJoLabor(delItem.id, joId); }} />}
+      {detailsItem && (
+        <JoLaborDetailsDialog
+          open={!!detailsItem}
+          onOpenChange={(o) => { if (!o) setDetailsItem(null); }}
+          joId={joId}
+          labor={detailsItem}
+          photos={photosByLabor.get(detailsItem.id) ?? []}
+          comments={commentsByLabor.get(detailsItem.id) ?? []}
+        />
+      )}
     </div>
   );
 }
@@ -505,6 +652,15 @@ function LaborDialog({
   const [laborTypeId, setLaborTypeId] = useState(item?.laborTypeId || "");
   const [statusId, setStatusId] = useState(item?.statusId?.toString() || "");
   const [price, setPrice] = useState(item?.price || "");
+  const [laborSearch, setLaborSearch] = useState(
+    item?.laborTypeId ? laborTypes.find((l) => l.id === item.laborTypeId)?.name || "" : ""
+  );
+
+  const filteredLaborTypes = useMemo(() => {
+    if (!laborSearch.trim()) return laborTypes.slice(0, 50);
+    const q = laborSearch.toLowerCase();
+    return laborTypes.filter((l) => l.name.toLowerCase().includes(q)).slice(0, 50);
+  }, [laborTypes, laborSearch]);
 
   const boundAction = item
     ? updateJoLabor.bind(null, item.id, joId)
@@ -537,17 +693,34 @@ function LaborDialog({
           <input type="hidden" name="laborTypeId" value={laborTypeId} />
           <div className="space-y-1.5">
             <Label className="text-xs">Service Type <span className="text-red-500">*</span></Label>
-            <Select value={laborTypeId} onValueChange={(val) => { if (val) handleLaborTypeChange(val); }}>
-              <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Select service" /></SelectTrigger>
-              <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl max-h-[200px]">
-                {laborTypes.map((lt) => (
-                  <SelectItem key={lt.id} value={lt.id}>
-                    {lt.name}
-                    {lt.defaultPrice && <span className="text-muted-foreground ml-2">({fmt(lt.defaultPrice)})</span>}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              placeholder="Search service..."
+              value={laborSearch}
+              onChange={(e) => setLaborSearch(e.target.value)}
+              className="border-border/40 bg-card/60 mb-1"
+            />
+            <div className="max-h-[160px] overflow-y-auto rounded-md border border-border/40 bg-card/60">
+              {filteredLaborTypes.length === 0 ? (
+                <div className="p-3 text-xs text-muted-foreground text-center">No services found</div>
+              ) : (
+                filteredLaborTypes.map((lt) => (
+                  <button
+                    key={lt.id}
+                    type="button"
+                    onClick={() => {
+                      handleLaborTypeChange(lt.id);
+                      setLaborSearch(lt.name);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-orange-500/10 transition-colors border-b border-border/20 last:border-0 ${laborTypeId === lt.id ? "bg-orange-500/10 text-orange-500" : ""}`}
+                  >
+                    <div className="line-clamp-1 font-medium">{lt.name}</div>
+                    {lt.defaultPrice && (
+                      <div className="text-[10px] text-muted-foreground font-mono">{fmt(lt.defaultPrice)}</div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -566,7 +739,11 @@ function LaborDialog({
               <Label className="text-xs">Status</Label>
               <input type="hidden" name="statusId" value={statusId} />
               <Select value={statusId} onValueChange={(val) => { if (val) setStatusId(val); }}>
-                <SelectTrigger className="border-border/40 bg-card/60"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectTrigger className="border-border/40 bg-card/60">
+                  <SelectValue placeholder="Status">
+                    {statusId ? statuses.find((s) => s.id.toString() === statusId)?.status : undefined}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent className="border-border/40 bg-card/95 backdrop-blur-xl">
                   {statuses.map((s) => <SelectItem key={s.id} value={s.id.toString()}>{s.status}</SelectItem>)}
                 </SelectContent>

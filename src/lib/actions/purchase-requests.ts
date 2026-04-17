@@ -3,10 +3,14 @@ import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { purchaseRequests, prLines } from "@/lib/db/schema/vendor";
+import {
+  purchaseRequests, prLines,
+  prComments, prLineComments, prLinePhotos,
+} from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth/actions";
+import { deleteMediaByUrl } from "@/lib/supabase/storage-server";
 
 // ── Schemas ──
 
@@ -255,5 +259,120 @@ export async function deletePrLine(
 
   revalidatePath(`/dashboard/purchase-requests/${prId}`);
   revalidatePath("/dashboard/purchase-requests");
+  return { success: true };
+}
+
+// ─── PR Comments ───
+const prCommentSchema = z.object({
+  comment: z.string().min(1, "Comment is required"),
+});
+
+export async function addPrComment(
+  prId: string,
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const parsed = prCommentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  try {
+    const userId = await requireUserId();
+    await db.insert(prComments).values({
+      prId,
+      comment: parsed.data.comment.trim(),
+      createdBy: userId,
+      updatedBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add comment") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  return { success: true };
+}
+
+export async function deletePrComment(id: string, prId: string): Promise<PrFormState> {
+  try {
+    await db.delete(prComments).where(eq(prComments.id, id));
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete comment") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  return { success: true };
+}
+
+// ─── PR Line Photos ───
+export async function addPrLinePhoto(
+  prLineId: string,
+  prId: string,
+  photoUrl: string,
+  comment: string | null
+): Promise<PrFormState> {
+  if (!photoUrl) return { error: "Photo URL is required" };
+  try {
+    const userId = await requireUserId();
+    await db.insert(prLinePhotos).values({
+      prLineId,
+      photoUrl,
+      comment: comment?.trim() || null,
+      createdBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add photo") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  return { success: true };
+}
+
+export async function deletePrLinePhoto(
+  id: string,
+  prId: string,
+  photoUrl: string
+): Promise<PrFormState> {
+  try {
+    await db.delete(prLinePhotos).where(eq(prLinePhotos.id, id));
+    await deleteMediaByUrl([photoUrl]).catch(() => {});
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete photo") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  return { success: true };
+}
+
+// ─── PR Line Comments ───
+const prLineCommentSchema = z.object({
+  comment: z.string().min(1, "Comment is required"),
+});
+
+export async function addPrLineComment(
+  prLineId: string,
+  prId: string,
+  _prev: PrFormState,
+  formData: FormData
+): Promise<PrFormState> {
+  const parsed = prLineCommentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  try {
+    const userId = await requireUserId();
+    await db.insert(prLineComments).values({
+      prLineId,
+      comment: parsed.data.comment.trim(),
+      createdBy: userId,
+      updatedBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add comment") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
+  return { success: true };
+}
+
+export async function deletePrLineComment(id: string, prId: string): Promise<PrFormState> {
+  try {
+    await db.delete(prLineComments).where(eq(prLineComments.id, id));
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete comment") };
+  }
+  revalidatePath(`/dashboard/purchase-requests/${prId}`);
   return { success: true };
 }
