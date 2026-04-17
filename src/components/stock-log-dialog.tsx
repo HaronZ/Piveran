@@ -196,17 +196,19 @@ export function StockLogDialog({
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedSalesType, setSelectedSalesType] = useState("");
   const [selectedPaymentType, setSelectedPaymentType] = useState("");
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
-    if (open) {
-      setSelectedPart(entry?.partId ? parts.find((p) => p.id === entry.partId)?.name || "" : "");
-      setSelectedAction(entry?.actionId ? actions.find((a) => a.id === entry.actionId)?.name || "" : "");
-      setSelectedVendor(entry?.vendorId ? vendors.find((v) => v.id === entry.vendorId)?.name || "" : "");
-      setSelectedUnit(entry?.unitId ? units.find((u) => u.id === entry.unitId)?.name || "" : "");
-      setSelectedSalesType(entry?.salesTypeId ? salesTypes.find((s) => s.id === entry.salesTypeId)?.type || "" : "");
-      setSelectedPaymentType(entry?.paymentTypeId ? paymentTypes.find((p) => p.id === entry.paymentTypeId)?.type || "" : "");
-    }
-  }, [open, entry, parts, actions, vendors, units, salesTypes, paymentTypes]);
+  if (open && !prevOpen) {
+    setPrevOpen(true);
+    setSelectedPart(entry?.partId ? parts.find((p) => p.id === entry.partId)?.name || "" : "");
+    setSelectedAction(entry?.actionId ? actions.find((a) => a.id === entry.actionId)?.name || "" : "");
+    setSelectedVendor(entry?.vendorId ? vendors.find((v) => v.id === entry.vendorId)?.name || "" : "");
+    setSelectedUnit(entry?.unitId ? units.find((u) => u.id === entry.unitId)?.name || "" : "");
+    setSelectedSalesType(entry?.salesTypeId ? salesTypes.find((s) => s.id === entry.salesTypeId)?.type || "" : "");
+    setSelectedPaymentType(entry?.paymentTypeId ? paymentTypes.find((p) => p.id === entry.paymentTypeId)?.type || "" : "");
+  } else if (!open && prevOpen) {
+    setPrevOpen(false);
+  }
 
   const partId = parts.find((p) => p.name === selectedPart)?.id || "";
   const actionId = actions.find((a) => a.name === selectedAction)?.id;

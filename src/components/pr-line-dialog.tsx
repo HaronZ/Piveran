@@ -63,26 +63,28 @@ export function PrLineDialog({
   const [selectedPart, setSelectedPart] = useState(initialPart);
   const [selectedVendor, setSelectedVendor] = useState(initialVendor);
   const [selectedStatus, setSelectedStatus] = useState(initialStatus);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
-    if (open) {
-      setSelectedPart(
-        line?.partId
-          ? parts.find((p) => p.id === line.partId)?.name || ""
-          : ""
-      );
-      setSelectedVendor(
-        line?.supplierId
-          ? vendors.find((v) => v.id === line.supplierId)?.name || ""
-          : ""
-      );
-      setSelectedStatus(
-        line?.statusId
-          ? lineStatuses.find((s) => s.id === line.statusId)?.status || ""
-          : ""
-      );
-    }
-  }, [open, line, parts, vendors, lineStatuses]);
+  if (open && !prevOpen) {
+    setPrevOpen(true);
+    setSelectedPart(
+      line?.partId
+        ? parts.find((p) => p.id === line.partId)?.name || ""
+        : ""
+    );
+    setSelectedVendor(
+      line?.supplierId
+        ? vendors.find((v) => v.id === line.supplierId)?.name || ""
+        : ""
+    );
+    setSelectedStatus(
+      line?.statusId
+        ? lineStatuses.find((s) => s.id === line.statusId)?.status || ""
+        : ""
+    );
+  } else if (!open && prevOpen) {
+    setPrevOpen(false);
+  }
 
   const partId = parts.find((p) => p.name === selectedPart)?.id || "";
   const supplierId = vendors.find((v) => v.name === selectedVendor)?.id || "";
