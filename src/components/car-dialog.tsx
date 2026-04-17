@@ -41,11 +41,13 @@ export function CarDialog({
   const isEdit = !!car;
   const initialOwnerId = car?.ownerId || defaultOwnerId || "";
   const [ownerId, setOwnerId] = useState(initialOwnerId);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  // Reset state when dialog opens with different car
-  useEffect(() => {
+  // Reset state when dialog opens
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     setOwnerId(car?.ownerId || defaultOwnerId || "");
-  }, [car?.ownerId, defaultOwnerId, open]);
+  }
 
   const boundAction = car ? updateCar.bind(null, car.id) : createCar;
 

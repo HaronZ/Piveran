@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -30,9 +31,6 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Truck,
   ExternalLink,
   Phone,
@@ -78,16 +76,6 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
     }
     setPage(1);
   }
-
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column)
-      return <ArrowUpDown className="h-3 w-3 text-muted-foreground/40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-amber-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-amber-500" />
-    );
-  };
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -174,7 +162,7 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
                 >
                   <div className="flex items-center gap-1.5">
                     Vendor
-                    <SortIcon column="name" />
+                    <SortIndicator active={sortKey === "name"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead className="text-xs w-[200px]">Address</TableHead>
@@ -185,7 +173,7 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     Parts
-                    <SortIcon column="partsSuppliedCount" />
+                    <SortIndicator active={sortKey === "partsSuppliedCount"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead
@@ -194,7 +182,7 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
                 >
                   <div className="flex items-center gap-1.5">
                     Added
-                    <SortIcon column="createdAt" />
+                    <SortIndicator active={sortKey === "createdAt"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead className="text-xs w-[50px]" />

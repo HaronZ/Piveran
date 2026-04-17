@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -37,10 +38,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ArrowUpDown,
   Package,
-  ArrowUp,
-  ArrowDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -93,16 +91,6 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
     setPage(1);
   }
 
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column)
-      return <ArrowUpDown className="h-3 w-3 text-muted-foreground/40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-amber-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-amber-500" />
-    );
-  };
-
   // Filter + sort
   const filtered = useMemo(() => {
     let rows = [...parts];
@@ -151,7 +139,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
     });
 
     return rows;
-  }, [parts, search, brandFilter, showCriticalOnly, sortKey, sortDir]);
+  }, [parts, search, brandFilter, showCriticalOnly, sortKey, sortDir, brands]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -269,7 +257,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                 >
                   <div className="flex items-center gap-1.5">
                     Name
-                    <SortIcon column="name" />
+                    <SortIndicator active={sortKey === "name"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead
@@ -278,7 +266,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                 >
                   <div className="flex items-center gap-1.5">
                     Brand
-                    <SortIcon column="brandName" />
+                    <SortIndicator active={sortKey === "brandName"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead className="text-xs w-[130px]">Part #</TableHead>
@@ -289,7 +277,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     Stock
-                    <SortIcon column="currentStock" />
+                    <SortIndicator active={sortKey === "currentStock"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead
@@ -298,7 +286,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                 >
                   <div className="flex items-center justify-end gap-1.5">
                     Price
-                    <SortIcon column="latestPrice" />
+                    <SortIndicator active={sortKey === "latestPrice"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
                 <TableHead className="text-xs w-[50px]" />

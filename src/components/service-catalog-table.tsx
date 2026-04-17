@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo, useActionState, useEffect } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -55,13 +56,6 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="h-3 w-3 ml-1 text-orange-500" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-orange-500" />;
   }
 
   // KPIs
@@ -158,14 +152,14 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
-                <div className="flex items-center">Service Name <SortIcon col="name" /></div>
+                <div className="flex items-center">Service Name <SortIndicator active={sortKey === "name"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden sm:table-cell">Description</TableHead>
               <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleSort("defaultPrice")}>
-                <div className="flex items-center justify-end">Default Price <SortIcon col="defaultPrice" /></div>
+                <div className="flex items-center justify-end">Default Price <SortIndicator active={sortKey === "defaultPrice"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort("usageCount")}>
-                <div className="flex items-center justify-center">JO Usage <SortIcon col="usageCount" /></div>
+                <div className="flex items-center justify-center">JO Usage <SortIndicator active={sortKey === "usageCount"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>

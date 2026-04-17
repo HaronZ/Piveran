@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Search, Plus, MoreHorizontal, Pencil, Trash2,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp,
   DollarSign, TrendingUp, TrendingDown,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
@@ -48,13 +49,6 @@ export function CashLogTable({ entries, actions, expenseTypes, opexTypes }: Cash
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("desc"); }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="h-3 w-3 ml-1 text-emerald-500" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-emerald-500" />;
   }
 
   // Totals
@@ -216,13 +210,13 @@ export function CashLogTable({ entries, actions, expenseTypes, opexTypes }: Cash
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("date")}>
-                <div className="flex items-center">Date <SortIcon col="date" /></div>
+                <div className="flex items-center">Date <SortIndicator active={sortKey === "date"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("action")}>
-                <div className="flex items-center">Action <SortIcon col="action" /></div>
+                <div className="flex items-center">Action <SortIndicator active={sortKey === "action"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleSort("amount")}>
-                <div className="flex items-center justify-end">Amount <SortIcon col="amount" /></div>
+                <div className="flex items-center justify-end">Amount <SortIndicator active={sortKey === "amount"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden md:table-cell">Type</TableHead>
               <TableHead className="hidden lg:table-cell">Comment</TableHead>

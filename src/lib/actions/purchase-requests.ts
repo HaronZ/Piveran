@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -67,8 +68,8 @@ export async function createPurchaseRequest(
     revalidatePath("/dashboard/purchase-requests");
     revalidatePath("/dashboard");
     return { success: true, prId: result[0]?.id };
-  } catch (e: any) {
-    return { error: e.message || "Failed to create purchase request" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to create purchase request") };
   }
 }
 
@@ -99,8 +100,8 @@ export async function updatePurchaseRequest(
         updatedBy: userId,
       })
       .where(eq(purchaseRequests.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update purchase request" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update purchase request") };
   }
 
   revalidatePath("/dashboard/purchase-requests");
@@ -119,8 +120,8 @@ export async function updatePrStatus(
       .update(purchaseRequests)
       .set({ statusId, updatedAt: new Date(), updatedBy: userId })
       .where(eq(purchaseRequests.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update status" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update status") };
   }
 
   revalidatePath("/dashboard/purchase-requests");
@@ -134,8 +135,8 @@ export async function deletePurchaseRequest(
 ): Promise<PrFormState> {
   try {
     await db.delete(purchaseRequests).where(eq(purchaseRequests.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete purchase request" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete purchase request") };
   }
 
   revalidatePath("/dashboard/purchase-requests");
@@ -183,8 +184,8 @@ export async function addPrLine(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to add line item" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add line item") };
   }
 
   revalidatePath(`/dashboard/purchase-requests/${prId}`);
@@ -233,8 +234,8 @@ export async function updatePrLine(
         updatedBy: userId,
       })
       .where(eq(prLines.id, lineId));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update line item" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update line item") };
   }
 
   revalidatePath(`/dashboard/purchase-requests/${prId}`);
@@ -248,8 +249,8 @@ export async function deletePrLine(
 ): Promise<PrFormState> {
   try {
     await db.delete(prLines).where(eq(prLines.id, lineId));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete line item" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete line item") };
   }
 
   revalidatePath(`/dashboard/purchase-requests/${prId}`);

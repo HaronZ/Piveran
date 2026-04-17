@@ -88,11 +88,13 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
   // Close mobile sidebar on route change
-  useEffect(() => {
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileOpen(false);
-  }, [pathname]);
+  }
 
   // Close mobile sidebar on resize to desktop
   useEffect(() => {

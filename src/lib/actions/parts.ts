@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -54,8 +55,8 @@ export async function createPart(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to create part" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to create part") };
   }
 
   revalidatePath("/dashboard/parts");
@@ -96,8 +97,8 @@ export async function updatePart(
         updatedBy: userId,
       })
       .where(eq(parts.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update part" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update part") };
   }
 
   revalidatePath("/dashboard/parts");
@@ -108,8 +109,8 @@ export async function updatePart(
 export async function deletePart(id: string): Promise<PartFormState> {
   try {
     await db.delete(parts).where(eq(parts.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete part" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete part") };
   }
 
   revalidatePath("/dashboard/parts");

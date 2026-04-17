@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -37,9 +38,6 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ClipboardList,
   ChevronLeft,
   ChevronRight,
@@ -121,16 +119,6 @@ export function StockLogTable({
     }
     setPage(1);
   }
-
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column)
-      return <ArrowUpDown className="h-3 w-3 text-muted-foreground/40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-amber-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-amber-500" />
-    );
-  };
 
   const filtered = useMemo(() => {
     let rows = [...logs];
@@ -239,7 +227,7 @@ export function StockLogTable({
                     onClick={() => toggleSort("date")}
                   >
                     <div className="flex items-center gap-1.5">
-                      Date <SortIcon column="date" />
+                      Date <SortIndicator active={sortKey === "date"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -247,7 +235,7 @@ export function StockLogTable({
                     onClick={() => toggleSort("partName")}
                   >
                     <div className="flex items-center gap-1.5">
-                      Part <SortIcon column="partName" />
+                      Part <SortIndicator active={sortKey === "partName"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -255,7 +243,7 @@ export function StockLogTable({
                     onClick={() => toggleSort("actionName")}
                   >
                     <div className="flex items-center gap-1.5">
-                      Action <SortIcon column="actionName" />
+                      Action <SortIndicator active={sortKey === "actionName"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -263,7 +251,7 @@ export function StockLogTable({
                     onClick={() => toggleSort("quantity")}
                   >
                     <div className="flex items-center justify-center gap-1.5">
-                      Qty <SortIcon column="quantity" />
+                      Qty <SortIndicator active={sortKey === "quantity"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead className="text-xs w-[90px] text-right">
@@ -274,7 +262,7 @@ export function StockLogTable({
                     onClick={() => toggleSort("totalPrice")}
                   >
                     <div className="flex items-center justify-end gap-1.5">
-                      Total <SortIcon column="totalPrice" />
+                      Total <SortIndicator active={sortKey === "totalPrice"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead className="text-xs w-[120px]">Vendor</TableHead>

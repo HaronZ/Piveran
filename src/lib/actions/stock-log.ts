@@ -1,4 +1,5 @@
 "use server";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -66,8 +67,8 @@ export async function createStockLog(
       createdBy: userId,
       updatedBy: userId,
     });
-  } catch (e: any) {
-    return { error: e.message || "Failed to create stock log entry" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to create stock log entry") };
   }
 
   revalidateAll();
@@ -111,8 +112,8 @@ export async function updateStockLog(
         updatedBy: userId,
       })
       .where(eq(inventoryLog.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to update stock log entry" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update stock log entry") };
   }
 
   revalidateAll();
@@ -122,8 +123,8 @@ export async function updateStockLog(
 export async function deleteStockLog(id: string): Promise<StockLogFormState> {
   try {
     await db.delete(inventoryLog).where(eq(inventoryLog.id, id));
-  } catch (e: any) {
-    return { error: e.message || "Failed to delete stock log entry" };
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete stock log entry") };
   }
 
   revalidateAll();

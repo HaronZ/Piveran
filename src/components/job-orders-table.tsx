@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Search, Plus, MoreHorizontal, Pencil, Trash2, Eye,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp,
   ClipboardList, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Clock, CheckCircle2, XCircle, Loader,
 } from "lucide-react";
@@ -59,13 +60,6 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="h-3 w-3 ml-1 text-orange-500" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-orange-500" />;
   }
 
   // Status summary cards
@@ -178,17 +172,17 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("joNumber")}>
-                <div className="flex items-center">JO # <SortIcon col="joNumber" /></div>
+                <div className="flex items-center">JO # <SortIndicator active={sortKey === "joNumber"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("customer")}>
-                <div className="flex items-center">Customer <SortIcon col="customer" /></div>
+                <div className="flex items-center">Customer <SortIndicator active={sortKey === "customer"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden lg:table-cell">Car</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("status")}>
-                <div className="flex items-center">Status <SortIcon col="status" /></div>
+                <div className="flex items-center">Status <SortIndicator active={sortKey === "status"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden md:table-cell cursor-pointer select-none" onClick={() => toggleSort("checkinDate")}>
-                <div className="flex items-center">Check-in <SortIcon col="checkinDate" /></div>
+                <div className="flex items-center">Check-in <SortIndicator active={sortKey === "checkinDate"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden xl:table-cell">Check-out</TableHead>
               <TableHead className="w-[50px]" />

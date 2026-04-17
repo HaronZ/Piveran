@@ -45,7 +45,12 @@ export async function getVendors(): Promise<VendorRow[]> {
     ORDER BY v.name ASC
   `);
 
-  return (rows as unknown as any[]).map((r: any) => ({
+  type Raw = Omit<VendorRow, "contactCount" | "partsSuppliedCount" | "createdAt"> & {
+    contactCount: unknown;
+    partsSuppliedCount: unknown;
+    createdAt: unknown;
+  };
+  return (rows as unknown as Raw[]).map((r) => ({
     id: r.id,
     name: r.name,
     address: r.address,

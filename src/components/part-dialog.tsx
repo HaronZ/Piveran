@@ -50,22 +50,24 @@ export function PartDialog({
 
   const [selectedBrand, setSelectedBrand] = useState(initialBrand);
   const [selectedCabinet, setSelectedCabinet] = useState(initialCabinet);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  // Reset when dialog opens/closes or part changes
-  useEffect(() => {
-    if (open) {
-      setSelectedBrand(
-        part?.brandId
-          ? brands.find((b) => b.id === part.brandId)?.name || ""
-          : ""
-      );
-      setSelectedCabinet(
-        part?.cabinetCodeId
-          ? cabinetCodes.find((c) => c.id === part.cabinetCodeId)?.code || ""
-          : ""
-      );
-    }
-  }, [open, part, brands, cabinetCodes]);
+  // Reset state when dialog opens
+  if (open && !prevOpen) {
+    setPrevOpen(true);
+    setSelectedBrand(
+      part?.brandId
+        ? brands.find((b) => b.id === part.brandId)?.name || ""
+        : ""
+    );
+    setSelectedCabinet(
+      part?.cabinetCodeId
+        ? cabinetCodes.find((c) => c.id === part.cabinetCodeId)?.code || ""
+        : ""
+    );
+  } else if (!open && prevOpen) {
+    setPrevOpen(false);
+  }
 
   // Resolve IDs from names
   const brandId = brands.find((b) => b.name === selectedBrand)?.id || "";

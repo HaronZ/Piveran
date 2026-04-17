@@ -127,11 +127,11 @@ export async function getDashboardData(): Promise<DashboardData> {
       { status: "Cancelled", count: cancelledJOs, color: "#ef4444" },
     ].filter((s) => s.count > 0);
 
-    const monthlyRevenue = (monthlyRevenueResult as unknown as any[])
-      .map((r: any) => ({ month: r.month, revenue: Number(r.revenue) }))
+    const monthlyRevenue = (monthlyRevenueResult as unknown as { month: string; revenue: unknown }[])
+      .map((r) => ({ month: r.month, revenue: Number(r.revenue) }))
       .reverse();
 
-    const topBrands = (topBrandsResult as unknown as any[]).map((r: any) => ({
+    const topBrands = (topBrandsResult as unknown as { name: string; part_count: unknown }[]).map((r) => ({
       name: r.name, count: Number(r.part_count),
     }));
 
@@ -147,7 +147,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       inventoryCurrentValue: invValue[0]?.value ? Number(invValue[0].value) : null,
       inventoryValueDate: invValue[0]?.date ?? null,
       totalRevenue: revenueResult[0]?.total ? Number(revenueResult[0].total) : 0,
-      lowStockParts: (lowStockResult as unknown as any[]).map((r: any) => ({
+      lowStockParts: (lowStockResult as unknown as { name: string; current_stock: unknown; critical_count: unknown }[]).map((r) => ({
         name: r.name, stock: Number(r.current_stock), critical: Number(r.critical_count),
       })),
       waitingDeliveryPRNames: waitingPRNamesResult.map((r) => r.prNumber),

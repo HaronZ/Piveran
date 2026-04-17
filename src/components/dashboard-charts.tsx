@@ -16,41 +16,19 @@ import {
   Area,
 } from "recharts";
 
-// ── Custom Tooltip Component ──
-function CustomTooltip({
-  active,
-  payload,
-  label,
-  prefix = "",
-  suffix = "",
-}: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-xl shadow-black/20">
-      {label && (
-        <p className="text-xs font-medium text-muted-foreground mb-1">
-          {label}
-        </p>
-      )}
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center gap-2">
-          <span
-            className="h-2.5 w-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: entry.color || entry.fill }}
-          />
-          <span className="text-xs text-muted-foreground">{entry.name}:</span>
-          <span className="text-xs font-semibold text-foreground">
-            {prefix}
-            {typeof entry.value === "number"
-              ? entry.value.toLocaleString()
-              : entry.value}
-            {suffix}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+type TooltipPayloadEntry = {
+  value?: number | string | readonly (number | string)[];
+  name?: string | number;
+  color?: string;
+  fill?: string;
+  payload?: Record<string, unknown>;
+};
+
+type TooltipContentArgs = {
+  active?: boolean;
+  payload?: readonly TooltipPayloadEntry[];
+  label?: string | number;
+};
 
 // ── Revenue Area Chart ──
 export function RevenueChart({
@@ -83,7 +61,7 @@ export function RevenueChart({
           width={55}
         />
         <Tooltip
-          content={({ active, payload, label }: any) => {
+          content={({ active, payload, label }: TooltipContentArgs) => {
             if (!active || !payload?.length) return null;
             return (
               <div className="rounded-lg border border-border bg-popover px-3 py-2.5 shadow-xl shadow-black/20">
@@ -149,23 +127,25 @@ export function JOStatusChart({
           ))}
         </Pie>
         <Tooltip
-          content={({ active, payload }: any) => {
+          content={({ active, payload }: TooltipContentArgs) => {
             if (!active || !payload?.length) return null;
             const item = payload[0];
-            const pct = ((item.value / total) * 100).toFixed(1);
+            const value = Number(item.value ?? 0);
+            const pct = ((value / total) * 100).toFixed(1);
+            const itemColor = item.payload?.color as string | undefined;
             return (
               <div className="rounded-lg border border-border bg-popover px-3 py-2.5 shadow-xl shadow-black/20">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: item.payload.color }}
+                    style={{ backgroundColor: itemColor }}
                   />
                   <span className="text-xs font-semibold text-foreground">
                     {item.name}
                   </span>
                 </div>
                 <p className="text-sm font-bold text-foreground pl-[18px]">
-                  {item.value.toLocaleString()}{" "}
+                  {value.toLocaleString()}{" "}
                   <span className="text-xs font-normal text-muted-foreground">
                     ({pct}%)
                   </span>
@@ -228,9 +208,11 @@ export function LowStockChart({
           tick={{ fill: "#999", fontSize: 11 }}
         />
         <Tooltip
-          content={({ active, payload }: any) => {
+          content={({ active, payload }: TooltipContentArgs) => {
             if (!active || !payload?.length) return null;
-            const item = payload[0]?.payload;
+            const item = payload[0]?.payload as
+              | { name?: string; stock?: number; critical?: number }
+              | undefined;
             return (
               <div className="rounded-lg border border-border bg-popover px-3 py-2.5 shadow-xl shadow-black/20 max-w-[220px]">
                 <p className="text-xs font-semibold text-foreground mb-1 truncate">
@@ -308,7 +290,7 @@ export function TopBrandsChart({
           width={35}
         />
         <Tooltip
-          content={({ active, payload, label }: any) => {
+          content={({ active, payload, label }: TooltipContentArgs) => {
             if (!active || !payload?.length) return null;
             return (
               <div className="rounded-lg border border-border bg-popover px-3 py-2.5 shadow-xl shadow-black/20">
@@ -316,7 +298,7 @@ export function TopBrandsChart({
                   {label}
                 </p>
                 <p className="text-sm font-bold" style={{ color: payload[0].fill }}>
-                  {payload[0].value.toLocaleString()}{" "}
+                  {Number(payload[0].value ?? 0).toLocaleString()}{" "}
                   <span className="text-xs font-normal text-muted-foreground">
                     parts
                   </span>

@@ -53,8 +53,8 @@ export function CustomerPhotosSection({ customerId, photos }: Props) {
         toast.success("Photo uploaded");
         setLabel("");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
       e.target.value = "";

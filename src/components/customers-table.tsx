@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -25,9 +26,6 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Users,
   Car,
   ChevronLeft,
@@ -69,15 +67,6 @@ export function CustomersTable({ customers }: CustomersTableProps) {
       setSortDir("asc");
     }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 ml-1 text-amber-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 ml-1 text-amber-500" />
-    );
   }
 
   const fullName = (c: CustomerRow) =>
@@ -147,7 +136,7 @@ export function CustomersTable({ customers }: CustomersTableProps) {
                 onClick={() => toggleSort("name")}
               >
                 <div className="flex items-center">
-                  Name <SortIcon col="name" />
+                  Name <SortIndicator active={sortKey === "name"} dir={sortDir} variant="teal" />
                 </div>
               </TableHead>
               <TableHead className="hidden md:table-cell">Nickname</TableHead>
@@ -159,7 +148,7 @@ export function CustomersTable({ customers }: CustomersTableProps) {
                 onClick={() => toggleSort("carsCount")}
               >
                 <div className="flex items-center justify-center">
-                  Cars <SortIcon col="carsCount" />
+                  Cars <SortIndicator active={sortKey === "carsCount"} dir={sortDir} variant="teal" />
                 </div>
               </TableHead>
               <TableHead className="w-[50px]" />
