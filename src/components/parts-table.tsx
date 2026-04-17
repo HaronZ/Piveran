@@ -49,7 +49,9 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PartDialog } from "@/components/part-dialog";
+import { PartPhotosDialog } from "@/components/part-photos-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
+import { Images } from "lucide-react";
 import { deletePart } from "@/lib/actions/parts";
 import type {
   PartRow,
@@ -80,6 +82,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editPart, setEditPart] = useState<PartRow | null>(null);
   const [deletingPart, setDeletingPart] = useState<PartRow | null>(null);
+  const [photosPart, setPhotosPart] = useState<PartRow | null>(null);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -430,6 +433,13 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-36">
                             <DropdownMenuItem
+                              onClick={() => setPhotosPart(part)}
+                              className="gap-2 text-sm"
+                            >
+                              <Images className="h-3.5 w-3.5" />
+                              Photos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => setEditPart(part)}
                               className="gap-2 text-sm"
                             >
@@ -529,6 +539,17 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
         brands={brands}
         cabinetCodes={cabinetCodes}
       />
+
+      {/* Photos Dialog */}
+      {photosPart && (
+        <PartPhotosDialog
+          open={!!photosPart}
+          onOpenChange={(open) => !open && setPhotosPart(null)}
+          partId={photosPart.id}
+          partName={photosPart.name}
+          partNumber={photosPart.partNumber}
+        />
+      )}
 
       {/* Delete Dialog */}
       <DeleteDialog

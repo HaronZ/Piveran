@@ -3,10 +3,12 @@ import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { parts } from "@/lib/db/schema/vendor";
+import { parts, partsPhotos } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth/actions";
+import { deleteMediaByUrl } from "@/lib/supabase/storage-server";
+import { getPartPhotos, type PartPhotoRow } from "@/lib/db/queries/parts";
 
 const partSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -115,5 +117,49 @@ export async function deletePart(id: string): Promise<PartFormState> {
 
   revalidatePath("/dashboard/parts");
   revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// ─── Part Photos ───
+export async function listPartPhotos(partId: string): Promise<PartPhotoRow[]> {
+  try {
+    return await getPartPhotos(partId);
+  } catch {
+    return [];
+  }
+}
+
+export async function addPartPhoto(
+  partId: string,
+  photoUrl: string,
+  notes: string | null
+): Promise<PartFormState> {
+  if (!photoUrl) return { error: "Photo URL is required" };
+  try {
+    await requireUserId();
+    await db.insert(partsPhotos).values({
+      partId,
+      photoUrl,
+      notes: notes?.trim() || null,
+      date: new Date(),
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add photo") };
+  }
+  revalidatePath("/dashboard/parts");
+  return { success: true };
+}
+
+export async function deletePartPhoto(
+  id: string,
+  photoUrl: string
+): Promise<PartFormState> {
+  try {
+    await db.delete(partsPhotos).where(eq(partsPhotos.id, id));
+    await deleteMediaByUrl([photoUrl]).catch(() => {});
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to delete photo") };
+  }
+  revalidatePath("/dashboard/parts");
   return { success: true };
 }
