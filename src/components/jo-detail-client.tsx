@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { JoPhotosSection } from "@/components/jo-photos-section";
 import { JoCommentsSection } from "@/components/jo-comments-section";
+import { JoMaterialDetailsDialog } from "@/components/jo-material-details-dialog";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteDialog } from "@/components/delete-dialog";
 import {
@@ -40,6 +42,7 @@ import type {
   JoDetailRow, JoMaterialRow, JoLaborRow, JoPaymentRow,
   JoLaborMechanicRow, JoPhotoRow, JoCommentRow, LaborTypeRow,
   JoMaterialStatusRow, JoLaborStatusRow, CashierRow,
+  JoMaterialPhotoRow, JoMaterialCommentRow,
 } from "@/lib/db/queries/jo-detail";
 import type { PartOption } from "@/lib/db/queries/purchase-requests";
 import type { MechanicSelectorRow } from "@/lib/db/queries/mechanics";
@@ -71,6 +74,8 @@ interface JoDetailClientProps {
   laborMechanics: JoLaborMechanicRow[];
   photos: JoPhotoRow[];
   comments: JoCommentRow[];
+  materialPhotos: JoMaterialPhotoRow[];
+  materialComments: JoMaterialCommentRow[];
   parts: PartOption[];
   laborTypes: LaborTypeRow[];
   materialStatuses: JoMaterialStatusRow[];
@@ -87,6 +92,8 @@ export function JoDetailClient({
   laborMechanics,
   photos,
   comments,
+  materialPhotos,
+  materialComments,
   parts,
   laborTypes,
   materialStatuses,
@@ -219,6 +226,8 @@ export function JoDetailClient({
         <MaterialsTab
           joId={jo.id}
           materials={materials}
+          materialPhotos={materialPhotos}
+          materialComments={materialComments}
           parts={parts}
           statuses={materialStatuses}
         />
@@ -249,16 +258,39 @@ export function JoDetailClient({
 //  MATERIALS TAB
 // ═══════════════════════════════════════
 function MaterialsTab({
-  joId, materials, parts, statuses,
+  joId, materials, materialPhotos, materialComments, parts, statuses,
 }: {
   joId: string;
   materials: JoMaterialRow[];
+  materialPhotos: JoMaterialPhotoRow[];
+  materialComments: JoMaterialCommentRow[];
   parts: PartOption[];
   statuses: JoMaterialStatusRow[];
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<JoMaterialRow | null>(null);
   const [delItem, setDelItem] = useState<JoMaterialRow | null>(null);
+  const [detailsItem, setDetailsItem] = useState<JoMaterialRow | null>(null);
+
+  const photosByMat = useMemo(() => {
+    const m = new Map<string, JoMaterialPhotoRow[]>();
+    for (const p of materialPhotos) {
+      const arr = m.get(p.joMaterialId) ?? [];
+      arr.push(p);
+      m.set(p.joMaterialId, arr);
+    }
+    return m;
+  }, [materialPhotos]);
+
+  const commentsByMat = useMemo(() => {
+    const m = new Map<string, JoMaterialCommentRow[]>();
+    for (const c of materialComments) {
+      const arr = m.get(c.joMaterialId) ?? [];
+      arr.push(c);
+      m.set(c.joMaterialId, arr);
+    }
+    return m;
+  }, [materialComments]);
 
   return (
     <div className="space-y-3">
@@ -287,11 +319,26 @@ function MaterialsTab({
                 No materials added
               </TableCell></TableRow>
             ) : (
-              materials.map((m) => (
+              materials.map((m) => {
+                const pCount = photosByMat.get(m.id)?.length ?? 0;
+                const cCount = commentsByMat.get(m.id)?.length ?? 0;
+                return (
                 <TableRow key={m.id} className="border-border/40 hover:bg-orange-500/5">
                   <TableCell className="text-sm">
                     <div className="line-clamp-1 font-medium">{m.partName || "Unknown Part"}</div>
-                    {m.partNumber && <div className="text-[10px] text-muted-foreground font-mono">{m.partNumber}</div>}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {m.partNumber && <span className="text-[10px] text-muted-foreground font-mono">{m.partNumber}</span>}
+                      {pCount > 0 && (
+                        <span className="text-[10px] text-violet-500 flex items-center gap-0.5">
+                          <Images className="h-3 w-3" />{pCount}
+                        </span>
+                      )}
+                      {cCount > 0 && (
+                        <span className="text-[10px] text-sky-500 flex items-center gap-0.5">
+                          <MessageSquare className="h-3 w-3" />{cCount}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right text-sm font-mono">{fmt(m.price)}</TableCell>
                   <TableCell className="text-center text-sm">{m.quantity ?? 1}</TableCell>
@@ -303,13 +350,15 @@ function MaterialsTab({
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="border-border/40 bg-card/95 backdrop-blur-xl">
+                        <DropdownMenuItem onClick={() => setDetailsItem(m)}><FileText className="h-4 w-4 mr-2" />Photos & Comments</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditItem(m)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setDelItem(m)} className="text-red-500 focus:text-red-500"><Trash2 className="h-4 w-4 mr-2" />Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -318,6 +367,16 @@ function MaterialsTab({
       <MaterialDialog open={addOpen} onOpenChange={setAddOpen} joId={joId} parts={parts} statuses={statuses} />
       {editItem && <MaterialDialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }} joId={joId} item={editItem} parts={parts} statuses={statuses} />}
       {delItem && <DeleteDialog open={!!delItem} onOpenChange={(o) => { if (!o) setDelItem(null); }} title="Delete Material" description={`Remove "${delItem.partName}"?`} onConfirm={async () => { await deleteJoMaterial(delItem.id, joId); }} />}
+      {detailsItem && (
+        <JoMaterialDetailsDialog
+          open={!!detailsItem}
+          onOpenChange={(o) => { if (!o) setDetailsItem(null); }}
+          joId={joId}
+          material={detailsItem}
+          photos={photosByMat.get(detailsItem.id) ?? []}
+          comments={commentsByMat.get(detailsItem.id) ?? []}
+        />
+      )}
     </div>
   );
 }

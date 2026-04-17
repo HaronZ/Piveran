@@ -6,6 +6,7 @@ import {
   joPayments, cashiers,
   customers, cars, mechanics,
   joPhotos, joComments,
+  joMaterialPhotos, joMaterialComments,
 } from "@/lib/db/schema/garage";
 import { parts } from "@/lib/db/schema/vendor";
 import { eq, sql, desc, asc } from "drizzle-orm";
@@ -225,6 +226,52 @@ export async function getJoLaborMechanics(joId: string): Promise<JoLaborMechanic
     .innerJoin(joLabors, eq(joLaborMechanics.joLaborId, joLabors.id))
     .innerJoin(mechanics, eq(joLaborMechanics.mechanicId, mechanics.id))
     .where(eq(joLabors.joId, joId));
+}
+
+// ─── JO Material Photos ───
+export type JoMaterialPhotoRow = {
+  id: string;
+  joMaterialId: string;
+  photoUrl: string;
+  comment: string | null;
+  createdAt: string | null;
+};
+
+export async function getJoMaterialPhotos(joId: string): Promise<JoMaterialPhotoRow[]> {
+  return db
+    .select({
+      id: joMaterialPhotos.id,
+      joMaterialId: joMaterialPhotos.joMaterialId,
+      photoUrl: joMaterialPhotos.photoUrl,
+      comment: joMaterialPhotos.comment,
+      createdAt: sql<string>`${joMaterialPhotos.createdAt}`.as("mp_created_at"),
+    })
+    .from(joMaterialPhotos)
+    .innerJoin(joMaterials, eq(joMaterialPhotos.joMaterialId, joMaterials.id))
+    .where(eq(joMaterials.joId, joId))
+    .orderBy(desc(joMaterialPhotos.createdAt));
+}
+
+// ─── JO Material Comments ───
+export type JoMaterialCommentRow = {
+  id: string;
+  joMaterialId: string;
+  comment: string;
+  createdAt: string | null;
+};
+
+export async function getJoMaterialComments(joId: string): Promise<JoMaterialCommentRow[]> {
+  return db
+    .select({
+      id: joMaterialComments.id,
+      joMaterialId: joMaterialComments.joMaterialId,
+      comment: joMaterialComments.comment,
+      createdAt: sql<string>`${joMaterialComments.createdAt}`.as("mc_created_at"),
+    })
+    .from(joMaterialComments)
+    .innerJoin(joMaterials, eq(joMaterialComments.joMaterialId, joMaterials.id))
+    .where(eq(joMaterials.joId, joId))
+    .orderBy(desc(joMaterialComments.createdAt));
 }
 
 // ─── JO Photos ───
