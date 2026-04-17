@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Search, Plus, MoreHorizontal, Pencil, Trash2,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp,
   Wrench, Phone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { MechanicDialog } from "@/components/mechanic-dialog";
@@ -43,13 +44,6 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="h-3 w-3 ml-1 text-purple-500" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-purple-500" />;
   }
 
   const fullName = (m: MechanicRow) =>
@@ -151,12 +145,12 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
-                <div className="flex items-center">Name <SortIcon col="name" /></div>
+                <div className="flex items-center">Name <SortIndicator active={sortKey === "name"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="hidden md:table-cell">Nickname</TableHead>
               <TableHead className="hidden md:table-cell">Contact</TableHead>
               <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort("jobsCount")}>
-                <div className="flex items-center justify-center">Jobs <SortIcon col="jobsCount" /></div>
+                <div className="flex items-center justify-center">Jobs <SortIndicator active={sortKey === "jobsCount"} dir={sortDir} variant="teal" /></div>
               </TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>

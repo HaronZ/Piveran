@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -39,9 +40,6 @@ import {
   Pencil,
   Trash2,
   Eye,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
@@ -118,16 +116,6 @@ export function PrTable({
     }
     setPage(1);
   }
-
-  const SortIcon = ({ column }: { column: SortKey }) => {
-    if (sortKey !== column)
-      return <ArrowUpDown className="h-3 w-3 text-muted-foreground/40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-amber-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-amber-500" />
-    );
-  };
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -240,7 +228,7 @@ export function PrTable({
                   >
                     <div className="flex items-center gap-1.5">
                       PR#
-                      <SortIcon column="prNumber" />
+                      <SortIndicator active={sortKey === "prNumber"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -249,7 +237,7 @@ export function PrTable({
                   >
                     <div className="flex items-center gap-1.5">
                       Date
-                      <SortIcon column="date" />
+                      <SortIndicator active={sortKey === "date"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead className="text-xs w-[180px]">Label</TableHead>
@@ -259,7 +247,7 @@ export function PrTable({
                   >
                     <div className="flex items-center gap-1.5">
                       Status
-                      <SortIcon column="statusName" />
+                      <SortIndicator active={sortKey === "statusName"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -268,7 +256,7 @@ export function PrTable({
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       Items
-                      <SortIcon column="lineCount" />
+                      <SortIndicator active={sortKey === "lineCount"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -277,7 +265,7 @@ export function PrTable({
                   >
                     <div className="flex items-center justify-end gap-1.5">
                       Total
-                      <SortIcon column="totalAmount" />
+                      <SortIndicator active={sortKey === "totalAmount"} dir={sortDir} variant="amber" />
                     </div>
                   </TableHead>
                   <TableHead className="text-xs w-[50px]" />

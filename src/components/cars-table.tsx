@@ -1,5 +1,6 @@
 "use client";
 
+import { SortIndicator } from "@/components/sort-indicator";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -24,9 +25,6 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Car,
   ChevronLeft,
   ChevronRight,
@@ -67,15 +65,6 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
       setSortDir("asc");
     }
     setPage(1);
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="h-3 w-3 ml-1 text-teal-500" />
-    ) : (
-      <ArrowDown className="h-3 w-3 ml-1 text-teal-500" />
-    );
   }
 
   const carLabel = (c: CarRow) =>
@@ -146,7 +135,7 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
                 onClick={() => toggleSort("plate")}
               >
                 <div className="flex items-center">
-                  Plate # <SortIcon col="plate" />
+                  Plate # <SortIndicator active={sortKey === "plate"} dir={sortDir} variant="teal" />
                 </div>
               </TableHead>
               <TableHead
@@ -154,7 +143,7 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
                 onClick={() => toggleSort("make")}
               >
                 <div className="flex items-center">
-                  Vehicle <SortIcon col="make" />
+                  Vehicle <SortIndicator active={sortKey === "make"} dir={sortDir} variant="teal" />
                 </div>
               </TableHead>
               <TableHead className="hidden md:table-cell">Year</TableHead>
@@ -164,7 +153,7 @@ export function CarsTable({ cars, customers }: CarsTableProps) {
                 onClick={() => toggleSort("owner")}
               >
                 <div className="flex items-center">
-                  Owner <SortIcon col="owner" />
+                  Owner <SortIndicator active={sortKey === "owner"} dir={sortDir} variant="teal" />
                 </div>
               </TableHead>
               <TableHead className="w-[50px]" />
