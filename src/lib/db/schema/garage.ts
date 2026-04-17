@@ -107,6 +107,17 @@ export const customerContacts = pgTable("customer_contacts", {
   updatedBy: uuid("updated_by").references(() => users.id),
 });
 
+export const customerPhotos = pgTable("customer_photos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  customerId: uuid("customer_id")
+    .notNull()
+    .references(() => customers.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
+  label: text("label"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  createdBy: uuid("created_by").references(() => users.id),
+});
+
 // ========================
 //  CARS
 // ========================
@@ -485,6 +496,50 @@ export const skills = pgTable("skills", {
   updatedBy: uuid("updated_by").references(() => users.id),
 });
 
+export const mechanicSkills = pgTable(
+  "mechanic_skills",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    mechanicId: uuid("mechanic_id")
+      .notNull()
+      .references(() => mechanics.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    createdBy: uuid("created_by").references(() => users.id),
+  },
+  (t) => [
+    index("mech_skills_mech_idx").on(t.mechanicId),
+    index("mech_skills_skill_idx").on(t.skillId),
+  ]
+);
+
+// ========================
+//  JO LABOR CHECKLIST CHECKS
+// ========================
+export const joLaborChecklistChecks = pgTable(
+  "jo_labor_checklist_checks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    joLaborId: uuid("jo_labor_id")
+      .notNull()
+      .references(() => joLabors.id, { onDelete: "cascade" }),
+    checklistId: uuid("checklist_id")
+      .notNull()
+      .references(() => qualityChecklists.id),
+    checked: boolean("checked").default(false),
+    notes: text("notes"),
+    checkedAt: timestamp("checked_at", { withTimezone: true }),
+    checkedBy: uuid("checked_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [
+    index("jo_labor_checks_labor_idx").on(t.joLaborId),
+    index("jo_labor_checks_checklist_idx").on(t.checklistId),
+  ]
+);
+
 // ========================
 //  RELATIONS
 // ========================
@@ -497,8 +552,13 @@ export const cashLogRelations = relations(cashLog, ({ one }) => ({
 export const customersRelations = relations(customers, ({ many }) => ({
   addresses: many(customerAddresses),
   contacts: many(customerContacts),
+  photos: many(customerPhotos),
   cars: many(cars),
   jobOrders: many(jobOrders),
+}));
+
+export const customerPhotosRelations = relations(customerPhotos, ({ one }) => ({
+  customer: one(customers, { fields: [customerPhotos.customerId], references: [customers.id] }),
 }));
 
 export const customerAddressesRelations = relations(customerAddresses, ({ one }) => ({
@@ -545,6 +605,12 @@ export const joLaborsRelations = relations(joLabors, ({ one, many }) => ({
   photos: many(joLaborPhotos),
   comments: many(joLaborComments),
   mechanics: many(joLaborMechanics),
+  checklistChecks: many(joLaborChecklistChecks),
+}));
+
+export const joLaborChecklistChecksRelations = relations(joLaborChecklistChecks, ({ one }) => ({
+  joLabor: one(joLabors, { fields: [joLaborChecklistChecks.joLaborId], references: [joLabors.id] }),
+  checklist: one(qualityChecklists, { fields: [joLaborChecklistChecks.checklistId], references: [qualityChecklists.id] }),
 }));
 
 export const joLaborMechanicsRelations = relations(joLaborMechanics, ({ one }) => ({
@@ -555,6 +621,16 @@ export const joLaborMechanicsRelations = relations(joLaborMechanics, ({ one }) =
 export const mechanicsRelations = relations(mechanics, ({ many }) => ({
   contacts: many(mechanicContacts),
   laborAssignments: many(joLaborMechanics),
+  skills: many(mechanicSkills),
+}));
+
+export const mechanicSkillsRelations = relations(mechanicSkills, ({ one }) => ({
+  mechanic: one(mechanics, { fields: [mechanicSkills.mechanicId], references: [mechanics.id] }),
+  skill: one(skills, { fields: [mechanicSkills.skillId], references: [skills.id] }),
+}));
+
+export const skillsRelations = relations(skills, ({ many }) => ({
+  mechanics: many(mechanicSkills),
 }));
 
 export const laborTypesRelations = relations(laborTypes, ({ many }) => ({
