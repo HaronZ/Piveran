@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { customers, customerAddresses, customerContacts } from "@/lib/db/schema/garage";
+import { customers, customerAddresses, customerContacts, customerPhotos } from "@/lib/db/schema/garage";
+import { deleteMediaByUrl } from "@/lib/supabase/storage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth/actions";
@@ -233,6 +234,43 @@ export async function deleteAddress(
     await db.delete(customerAddresses).where(eq(customerAddresses.id, id));
   } catch (e: any) {
     return { error: e.message || "Failed to delete address" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+// ─── Photo CRUD ───
+export async function addCustomerPhoto(
+  customerId: string,
+  photoUrl: string,
+  label: string | null
+): Promise<CustomerFormState> {
+  if (!photoUrl) return { error: "Photo URL is required" };
+  try {
+    const userId = await requireUserId();
+    await db.insert(customerPhotos).values({
+      customerId,
+      photoUrl,
+      label: label?.trim() || null,
+      createdBy: userId,
+    });
+  } catch (e: any) {
+    return { error: e.message || "Failed to add photo" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+export async function deleteCustomerPhoto(
+  id: string,
+  customerId: string,
+  photoUrl: string
+): Promise<CustomerFormState> {
+  try {
+    await db.delete(customerPhotos).where(eq(customerPhotos.id, id));
+    await deleteMediaByUrl([photoUrl]).catch(() => {});
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete photo" };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };

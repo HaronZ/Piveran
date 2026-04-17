@@ -20,6 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { CustomerDetailClient } from "@/components/customer-detail-client";
+import { CustomerPhotosSection } from "@/components/customer-photos-section";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -119,6 +120,12 @@ export default async function CustomerDetailPage({ params }: Props) {
         customerId={customer.id}
         contacts={customer.contacts}
         addresses={customer.addresses}
+      />
+
+      {/* Photos */}
+      <CustomerPhotosSection
+        customerId={customer.id}
+        photos={customer.photos}
       />
 
       {/* Linked Cars */}

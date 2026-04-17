@@ -49,6 +49,12 @@ export interface CustomerDetailRow {
     color: string | null;
     plateNumber: string | null;
   }[];
+  photos: {
+    id: string;
+    photoUrl: string;
+    label: string | null;
+    createdAt: string | null;
+  }[];
 }
 
 export interface CustomerSelectorRow {
@@ -155,6 +161,14 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
     ORDER BY make ASC, model ASC
   `);
 
+  // Photos
+  const photoRows = await db.execute(sql`
+    SELECT id, photo_url AS "photoUrl", label, created_at AS "createdAt"
+    FROM customer_photos
+    WHERE customer_id = ${id}
+    ORDER BY created_at DESC
+  `);
+
   return {
     id: cust.id,
     firstName: cust.firstName,
@@ -187,6 +201,12 @@ export async function getCustomerById(id: string): Promise<CustomerDetailRow | n
       year: c.year,
       color: c.color,
       plateNumber: c.plateNumber,
+    })),
+    photos: (photoRows as unknown as any[]).map((p: any) => ({
+      id: p.id,
+      photoUrl: p.photoUrl,
+      label: p.label,
+      createdAt: p.createdAt ? String(p.createdAt) : null,
     })),
   };
 }
