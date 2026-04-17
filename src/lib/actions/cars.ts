@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { cars } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 const carSchema = z.object({
   make: z.string().optional(),
@@ -38,6 +39,7 @@ export async function createCar(
   }
 
   try {
+    const userId = await requireUserId();
     await db.insert(cars).values({
       make: data.make || null,
       model: data.model || null,
@@ -45,6 +47,8 @@ export async function createCar(
       color: data.color || null,
       plateNumber: data.plateNumber || null,
       primaryOwnerId: data.primaryOwnerId || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to add car" };
@@ -71,6 +75,7 @@ export async function updateCar(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(cars)
       .set({
@@ -81,6 +86,7 @@ export async function updateCar(
         plateNumber: data.plateNumber || null,
         primaryOwnerId: data.primaryOwnerId || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(cars.id, id));
   } catch (e: any) {

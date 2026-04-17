@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { mechanics, mechanicContacts, joLaborMechanics } from "@/lib/db/schema/garage";
+import { mechanics, joLaborMechanics } from "@/lib/db/schema/garage";
 import { eq, sql, asc } from "drizzle-orm";
 
 export type MechanicRow = {

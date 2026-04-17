@@ -5,6 +5,7 @@ import { joMaterials, joLabors, joPayments } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUserId } from "@/lib/auth/actions";
 
 export type JoDetailFormState = { success?: boolean; error?: string };
 
@@ -35,6 +36,7 @@ export async function addJoMaterial(
   const totalPrice = qty * price;
   const finalPrice = totalPrice - discount;
 
+  const userId = await requireUserId();
   await db.insert(joMaterials).values({
     joId,
     partId: parsed.data.partId || null,
@@ -48,6 +50,8 @@ export async function addJoMaterial(
     includeInTotal: parsed.data.includeInTotal !== "false",
     comment: parsed.data.comment || null,
     date: new Date(),
+    createdBy: userId,
+    updatedBy: userId,
   });
 
   revalidatePath(`/dashboard/job-orders/${joId}`);
@@ -70,6 +74,7 @@ export async function updateJoMaterial(
   const totalPrice = qty * price;
   const finalPrice = totalPrice - discount;
 
+  const userId = await requireUserId();
   await db
     .update(joMaterials)
     .set({
@@ -84,6 +89,7 @@ export async function updateJoMaterial(
       includeInTotal: parsed.data.includeInTotal !== "false",
       comment: parsed.data.comment || null,
       updatedAt: new Date(),
+      updatedBy: userId,
     })
     .where(eq(joMaterials.id, id));
 
@@ -120,6 +126,7 @@ export async function addJoLabor(
   const discount = parseFloat(parsed.data.discount || "0");
   const totalPrice = price - discount;
 
+  const userId = await requireUserId();
   await db.insert(joLabors).values({
     joId,
     laborTypeId: parsed.data.laborTypeId || null,
@@ -129,6 +136,8 @@ export async function addJoLabor(
     statusId: parsed.data.statusId ? parseInt(parsed.data.statusId) : null,
     targetDate: parsed.data.targetDate || null,
     comment: parsed.data.comment || null,
+    createdBy: userId,
+    updatedBy: userId,
   });
 
   revalidatePath(`/dashboard/job-orders/${joId}`);
@@ -149,6 +158,7 @@ export async function updateJoLabor(
   const discount = parseFloat(parsed.data.discount || "0");
   const totalPrice = price - discount;
 
+  const userId = await requireUserId();
   await db
     .update(joLabors)
     .set({
@@ -160,6 +170,7 @@ export async function updateJoLabor(
       targetDate: parsed.data.targetDate || null,
       comment: parsed.data.comment || null,
       updatedAt: new Date(),
+      updatedBy: userId,
     })
     .where(eq(joLabors.id, id));
 
@@ -192,6 +203,7 @@ export async function addJoPayment(
   const parsed = paymentSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const userId = await requireUserId();
   await db.insert(joPayments).values({
     joId,
     orNumber: parsed.data.orNumber || null,
@@ -200,6 +212,8 @@ export async function addJoPayment(
     datePaid: parsed.data.datePaid || null,
     cashierId: parsed.data.cashierId || null,
     comment: parsed.data.comment || null,
+    createdBy: userId,
+    updatedBy: userId,
   });
 
   revalidatePath(`/dashboard/job-orders/${joId}`);
@@ -216,6 +230,7 @@ export async function updateJoPayment(
   const parsed = paymentSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const userId = await requireUserId();
   await db
     .update(joPayments)
     .set({
@@ -225,6 +240,7 @@ export async function updateJoPayment(
       datePaid: parsed.data.datePaid || null,
       cashierId: parsed.data.cashierId || null,
       comment: parsed.data.comment || null,
+      updatedBy: userId,
     })
     .where(eq(joPayments.id, id));
 

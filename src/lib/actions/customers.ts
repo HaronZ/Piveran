@@ -2,9 +2,11 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { customers, customerAddresses, customerContacts } from "@/lib/db/schema/garage";
+import { customers, customerAddresses, customerContacts, customerPhotos } from "@/lib/db/schema/garage";
+import { deleteMediaByUrl } from "@/lib/supabase/storage-server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 const customerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -43,6 +45,7 @@ export async function createCustomer(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     const [newCustomer] = await db
       .insert(customers)
       .values({
@@ -54,6 +57,8 @@ export async function createCustomer(
         birthday: data.birthday || null,
         primaryContact: data.primaryContact || null,
         email: data.email || null,
+        createdBy: userId,
+        updatedBy: userId,
       })
       .returning({ id: customers.id });
 
@@ -68,6 +73,8 @@ export async function createCustomer(
         city: data.city || null,
         province: data.province || null,
         zipCode: data.zipCode || null,
+        createdBy: userId,
+        updatedBy: userId,
       });
     }
   } catch (e: any) {
@@ -94,6 +101,7 @@ export async function updateCustomer(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(customers)
       .set({
@@ -106,6 +114,7 @@ export async function updateCustomer(
         primaryContact: data.primaryContact || null,
         email: data.email || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(customers.id, id));
 
@@ -121,6 +130,8 @@ export async function updateCustomer(
         city: data.city || null,
         province: data.province || null,
         zipCode: data.zipCode || null,
+        createdBy: userId,
+        updatedBy: userId,
       });
     }
   } catch (e: any) {
@@ -135,7 +146,16 @@ export async function updateCustomer(
 
 export async function deleteCustomer(id: string): Promise<CustomerFormState> {
   try {
+    const photos = await db
+      .select({ photoUrl: customerPhotos.photoUrl })
+      .from(customerPhotos)
+      .where(eq(customerPhotos.customerId, id));
+
     await db.delete(customers).where(eq(customers.id, id));
+
+    if (photos.length > 0) {
+      await deleteMediaByUrl(photos.map((p) => p.photoUrl)).catch(() => {});
+    }
   } catch (e: any) {
     return { error: e.message || "Failed to delete customer" };
   }
@@ -152,9 +172,12 @@ export async function addContact(
 ): Promise<CustomerFormState> {
   if (!contactNumber.trim()) return { error: "Contact number is required" };
   try {
+    const userId = await requireUserId();
     await db.insert(customerContacts).values({
       customerId,
       contactNumber: contactNumber.trim(),
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to add contact" };
@@ -193,6 +216,7 @@ export async function addAddress(
   }
 
   try {
+    const userId = await requireUserId();
     await db.insert(customerAddresses).values({
       customerId,
       street,
@@ -201,6 +225,8 @@ export async function addAddress(
       city,
       province,
       zipCode,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to add address" };
@@ -217,6 +243,43 @@ export async function deleteAddress(
     await db.delete(customerAddresses).where(eq(customerAddresses.id, id));
   } catch (e: any) {
     return { error: e.message || "Failed to delete address" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+// ─── Photo CRUD ───
+export async function addCustomerPhoto(
+  customerId: string,
+  photoUrl: string,
+  label: string | null
+): Promise<CustomerFormState> {
+  if (!photoUrl) return { error: "Photo URL is required" };
+  try {
+    const userId = await requireUserId();
+    await db.insert(customerPhotos).values({
+      customerId,
+      photoUrl,
+      label: label?.trim() || null,
+      createdBy: userId,
+    });
+  } catch (e: any) {
+    return { error: e.message || "Failed to add photo" };
+  }
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  return { success: true };
+}
+
+export async function deleteCustomerPhoto(
+  id: string,
+  customerId: string,
+  photoUrl: string
+): Promise<CustomerFormState> {
+  try {
+    await db.delete(customerPhotos).where(eq(customerPhotos.id, id));
+    await deleteMediaByUrl([photoUrl]).catch(() => {});
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete photo" };
   }
   revalidatePath(`/dashboard/customers/${customerId}`);
   return { success: true };

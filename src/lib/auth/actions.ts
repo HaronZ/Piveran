@@ -2,6 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cache } from "react";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema/security";
+import { eq } from "drizzle-orm";
 
 export async function signIn(formData: FormData) {
   const email = formData.get("email") as string;
@@ -37,4 +41,26 @@ export async function getCurrentUser() {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
+}
+
+export const getCurrentUserId = cache(async (): Promise<string | null> => {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser?.email) return null;
+
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, authUser.email))
+    .limit(1);
+
+  return rows[0]?.id ?? null;
+});
+
+export async function requireUserId(): Promise<string> {
+  const id = await getCurrentUserId();
+  if (!id) throw new Error("Not authenticated or user record missing");
+  return id;
 }

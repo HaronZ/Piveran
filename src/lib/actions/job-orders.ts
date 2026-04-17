@@ -5,6 +5,7 @@ import { jobOrders } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUserId } from "@/lib/auth/actions";
 
 const schema = z.object({
   joNumber: z.string().min(1, "JO Number is required"),
@@ -27,6 +28,7 @@ export async function createJobOrder(
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const userId = await requireUserId();
   await db.insert(jobOrders).values({
     joNumber: parsed.data.joNumber,
     customerId: parsed.data.customerId || null,
@@ -36,6 +38,8 @@ export async function createJobOrder(
     checkoutDate: parsed.data.checkoutDate ? new Date(parsed.data.checkoutDate) : null,
     discount: parsed.data.discount || null,
     comment: parsed.data.comment || null,
+    createdBy: userId,
+    updatedBy: userId,
   });
 
   revalidatePath("/dashboard/job-orders");
@@ -51,6 +55,7 @@ export async function updateJobOrder(
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const userId = await requireUserId();
   await db
     .update(jobOrders)
     .set({
@@ -63,6 +68,7 @@ export async function updateJobOrder(
       discount: parsed.data.discount || null,
       comment: parsed.data.comment || null,
       updatedAt: new Date(),
+      updatedBy: userId,
     })
     .where(eq(jobOrders.id, id));
 

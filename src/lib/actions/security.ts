@@ -5,6 +5,7 @@ import { roles, userRoles, roleViews } from "@/lib/db/schema/security";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUserId } from "@/lib/auth/actions";
 
 export type SecurityFormState = { success?: boolean; error?: string };
 
@@ -35,8 +36,9 @@ export async function createRole(
 
   // Insert role_views
   if (views.length > 0 && newRole[0]) {
+    const userId = await requireUserId();
     await db.insert(roleViews).values(
-      views.map((v) => ({ roleId: newRole[0].id, viewName: v }))
+      views.map((v) => ({ roleId: newRole[0].id, viewName: v, createdBy: userId, updatedBy: userId }))
     );
   }
 
@@ -66,8 +68,9 @@ export async function updateRole(
   // Replace role_views: delete all, then re-insert
   await db.delete(roleViews).where(eq(roleViews.roleId, id));
   if (views.length > 0) {
+    const userId = await requireUserId();
     await db.insert(roleViews).values(
-      views.map((v) => ({ roleId: id, viewName: v }))
+      views.map((v) => ({ roleId: id, viewName: v, createdBy: userId, updatedBy: userId }))
     );
   }
 
@@ -95,7 +98,8 @@ export async function assignRole(
 
   if (existing.length > 0) return { error: "Role already assigned" };
 
-  await db.insert(userRoles).values({ userId, roleId });
+  const actingUserId = await requireUserId();
+  await db.insert(userRoles).values({ userId, roleId, createdBy: actingUserId, updatedBy: actingUserId });
   revalidatePath("/dashboard/security");
   return { success: true };
 }

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import {
-  jobOrders, joStatuses, joComments,
+  jobOrders, joStatuses,
   joMaterials, joMaterialStatuses,
   joLabors, joLaborStatuses, laborTypes, joLaborMechanics,
   joPayments, cashiers,

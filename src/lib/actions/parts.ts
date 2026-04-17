@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { parts } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireUserId } from "@/lib/auth/actions";
 
 const partSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,6 +40,7 @@ export async function createPart(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db.insert(parts).values({
       name: data.name,
       brandId: data.brandId || null,
@@ -49,6 +51,8 @@ export async function createPart(
       criticalCount: data.criticalCount,
       includeCritical: data.includeCritical,
       comment: data.comment || null,
+      createdBy: userId,
+      updatedBy: userId,
     });
   } catch (e: any) {
     return { error: e.message || "Failed to create part" };
@@ -75,6 +79,7 @@ export async function updatePart(
   const data = parsed.data;
 
   try {
+    const userId = await requireUserId();
     await db
       .update(parts)
       .set({
@@ -88,6 +93,7 @@ export async function updatePart(
         includeCritical: data.includeCritical,
         comment: data.comment || null,
         updatedAt: new Date(),
+        updatedBy: userId,
       })
       .where(eq(parts.id, id));
   } catch (e: any) {

@@ -5,6 +5,7 @@ import { cashLog } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUserId } from "@/lib/auth/actions";
 
 const schema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -29,6 +30,7 @@ export async function createCashEntry(
   const ym = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
   const q = `Q${Math.ceil((dateObj.getMonth() + 1) / 3)}`;
 
+  const userId = await requireUserId();
   await db.insert(cashLog).values({
     datetime: dateObj,
     date: parsed.data.date,
@@ -40,6 +42,8 @@ export async function createCashEntry(
     comment: parsed.data.comment || null,
     expenseTypeId: parsed.data.expenseTypeId ? parseInt(parsed.data.expenseTypeId) : null,
     opexTypeId: parsed.data.opexTypeId ? parseInt(parsed.data.opexTypeId) : null,
+    createdBy: userId,
+    updatedBy: userId,
   });
 
   revalidatePath("/dashboard/cash-log");
@@ -59,6 +63,7 @@ export async function updateCashEntry(
   const ym = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
   const q = `Q${Math.ceil((dateObj.getMonth() + 1) / 3)}`;
 
+  const userId = await requireUserId();
   await db
     .update(cashLog)
     .set({
@@ -73,6 +78,7 @@ export async function updateCashEntry(
       expenseTypeId: parsed.data.expenseTypeId ? parseInt(parsed.data.expenseTypeId) : null,
       opexTypeId: parsed.data.opexTypeId ? parseInt(parsed.data.opexTypeId) : null,
       updatedAt: new Date(),
+      updatedBy: userId,
     })
     .where(eq(cashLog.id, id));
 
