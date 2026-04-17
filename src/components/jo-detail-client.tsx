@@ -542,8 +542,8 @@ function LaborsTab({
         </Button>
       </div>
 
-      <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
-        <Table>
+      <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-x-auto">
+        <Table className="w-full">
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead>Service</TableHead>
@@ -591,8 +591,21 @@ function LaborsTab({
                     <TableCell className="hidden sm:table-cell">
                       {l.statusName && <Badge variant="secondary" className="text-[10px]">{l.statusName}</Badge>}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                      {mechs.length > 0 ? mechs.map((m) => m.mechanicName).join(", ") : "—"}
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[260px]">
+                      {mechs.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {mechs.slice(0, 2).map((m) => (
+                            <Badge key={m.id} variant="secondary" className="text-[10px] font-normal">
+                              {m.mechanicName}
+                            </Badge>
+                          ))}
+                          {mechs.length > 2 && (
+                            <Badge variant="secondary" className="text-[10px] font-normal" title={mechs.slice(2).map((m) => m.mechanicName).join(", ")}>
+                              +{mechs.length - 2} more
+                            </Badge>
+                          )}
+                        </div>
+                      ) : "—"}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
