@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { CustomerDetailClient } from "@/components/customer-detail-client";
 import { CustomerPhotosSection } from "@/components/customer-photos-section";
+import { EmptyState } from "@/components/empty-state";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -144,9 +145,12 @@ export default async function CustomerDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           {customer.cars.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              No cars linked to this customer yet.
-            </p>
+            <EmptyState
+              icon={Car}
+              title="No vehicles linked"
+              description="Cars assigned to this customer will appear here."
+              iconClassName="bg-teal-500/10 text-teal-500"
+            />
           ) : (
             <div className="rounded-lg border border-border/40 overflow-hidden">
               <Table>
