@@ -1,6 +1,7 @@
 "use client";
 
 import { SortIndicator } from "@/components/sort-indicator";
+import { EmptyState } from "@/components/empty-state";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -252,7 +253,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
+            <TableHeader sticky>
               <TableRow className="hover:bg-transparent border-border/40">
                 <TableHead
                   className="cursor-pointer select-none text-xs w-[280px] min-w-[200px]"
@@ -298,31 +299,29 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
             <TableBody>
               {paged.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-48 text-center">
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/30">
-                        <Package className="h-7 w-7 text-muted-foreground/50" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">No parts found</p>
-                        <p className="text-xs mt-0.5">
-                          {search || brandFilter !== "all"
-                            ? "Try adjusting your search or filter"
-                            : "Add your first part to get started"}
-                        </p>
-                      </div>
-                      {!search && brandFilter === "all" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAddOpen(true)}
-                          className="mt-1 gap-2 text-xs"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Part
-                        </Button>
-                      )}
-                    </div>
+                  <TableCell colSpan={7} className="p-0">
+                    <EmptyState
+                      icon={Package}
+                      title="No parts found"
+                      description={
+                        search || brandFilter !== "all"
+                          ? "Try adjusting your search or filter."
+                          : "Add your first part to get started."
+                      }
+                      action={
+                        !search && brandFilter === "all" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAddOpen(true)}
+                            className="gap-2 text-xs"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Part
+                          </Button>
+                        )
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

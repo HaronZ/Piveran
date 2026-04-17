@@ -149,7 +149,7 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
       {/* Table */}
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader sticky>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
                 <div className="flex items-center">Service Name <SortIndicator active={sortKey === "name"} dir={sortDir} variant="teal" /></div>

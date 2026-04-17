@@ -169,7 +169,7 @@ export function JobOrdersTable({ jobOrders, statuses, customers, cars }: JobOrde
       {/* Table */}
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader sticky>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("joNumber")}>
                 <div className="flex items-center">JO # <SortIndicator active={sortKey === "joNumber"} dir={sortDir} variant="teal" /></div>

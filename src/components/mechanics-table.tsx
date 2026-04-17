@@ -1,6 +1,7 @@
 "use client";
 
 import { SortIndicator } from "@/components/sort-indicator";
+import { EmptyState } from "@/components/empty-state";
 import { useState, useMemo } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -142,7 +143,7 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
       {/* Table */}
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader sticky>
             <TableRow className="border-border/40 hover:bg-transparent">
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
                 <div className="flex items-center">Name <SortIndicator active={sortKey === "name"} dir={sortDir} variant="teal" /></div>
@@ -158,16 +159,20 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
           <TableBody>
             {paged.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <Wrench className="h-10 w-10 text-muted-foreground/30" />
-                    <p>{search ? "No mechanics match your search" : "No mechanics yet"}</p>
-                    {!search && (
-                      <Button size="sm" variant="outline" onClick={() => setAddOpen(true)} className="mt-1">
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Add your first mechanic
-                      </Button>
-                    )}
-                  </div>
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState
+                    icon={Wrench}
+                    title={search ? "No mechanics match your search" : "No mechanics yet"}
+                    description={search ? "Try a different keyword." : "Add your first mechanic to get started."}
+                    iconClassName="bg-orange-500/10 text-orange-500"
+                    action={
+                      !search && (
+                        <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Add mechanic
+                        </Button>
+                      )
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (

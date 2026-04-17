@@ -1,6 +1,7 @@
 "use client";
 
 import { SortIndicator } from "@/components/sort-indicator";
+import { EmptyState } from "@/components/empty-state";
 import { useState, useMemo } from "react";
 import {
   Table,
@@ -154,7 +155,7 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
       <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-md overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
+            <TableHeader sticky>
               <TableRow className="hover:bg-transparent border-border/40">
                 <TableHead
                   className="cursor-pointer select-none text-xs w-[220px] min-w-[180px]"
@@ -191,31 +192,27 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
             <TableBody>
               {paged.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-48 text-center">
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/30">
-                        <Truck className="h-7 w-7 text-muted-foreground/50" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">No vendors found</p>
-                        <p className="text-xs mt-0.5">
-                          {search
-                            ? "Try adjusting your search"
-                            : "Add your first vendor to get started"}
-                        </p>
-                      </div>
-                      {!search && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAddOpen(true)}
-                          className="mt-1 gap-2 text-xs"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Vendor
-                        </Button>
-                      )}
-                    </div>
+                  <TableCell colSpan={6} className="p-0">
+                    <EmptyState
+                      icon={Truck}
+                      title="No vendors found"
+                      description={
+                        search ? "Try adjusting your search." : "Add your first vendor to get started."
+                      }
+                      action={
+                        !search && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAddOpen(true)}
+                            className="gap-2 text-xs"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Vendor
+                          </Button>
+                        )
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
