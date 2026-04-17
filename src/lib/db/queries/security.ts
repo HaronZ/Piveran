@@ -9,26 +9,27 @@ export { AVAILABLE_VIEWS, AVAILABLE_TABLES, ACCESS_METHODS } from "./security-ty
 
 // ─── Users with Roles ───
 export async function getUsersWithRoles() {
-  const allUsers = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      nickName: users.nickName,
-      photoUrl: users.photoUrl,
-      createdAt: sql<string>`${users.createdAt}`.as("created_at"),
-    })
-    .from(users)
-    .orderBy(asc(users.email));
-
-  const allUserRoles = await db
-    .select({
-      userId: userRoles.userId,
-      roleName: roles.name,
-    })
-    .from(userRoles)
-    .innerJoin(roles, eq(userRoles.roleId, roles.id));
+  const [allUsers, allUserRoles] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        nickName: users.nickName,
+        photoUrl: users.photoUrl,
+        createdAt: sql<string>`${users.createdAt}`.as("created_at"),
+      })
+      .from(users)
+      .orderBy(asc(users.email)),
+    db
+      .select({
+        userId: userRoles.userId,
+        roleName: roles.name,
+      })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id)),
+  ]);
 
   return allUsers.map((u) => ({
     ...u,
@@ -38,36 +39,35 @@ export async function getUsersWithRoles() {
 
 // ─── Roles with View Permissions ───
 export async function getRolesWithViews() {
-  const allRoles = await db
-    .select({
-      id: roles.id,
-      name: roles.name,
-      description: roles.description,
-    })
-    .from(roles)
-    .orderBy(asc(roles.name));
-
-  const allRoleViews = await db
-    .select({
-      roleId: roleViews.roleId,
-      viewName: roleViews.viewName,
-    })
-    .from(roleViews);
-
-  const allRoleTables = await db
-    .select({
-      roleId: roleTables.roleId,
-      tableName: roleTables.tableName,
-      accessMethod: roleTables.accessMethod,
-    })
-    .from(roleTables);
-
-  const allUserRoles = await db
-    .select({
-      roleId: userRoles.roleId,
-      userId: userRoles.userId,
-    })
-    .from(userRoles);
+  const [allRoles, allRoleViews, allRoleTables, allUserRoles] = await Promise.all([
+    db
+      .select({
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
+      })
+      .from(roles)
+      .orderBy(asc(roles.name)),
+    db
+      .select({
+        roleId: roleViews.roleId,
+        viewName: roleViews.viewName,
+      })
+      .from(roleViews),
+    db
+      .select({
+        roleId: roleTables.roleId,
+        tableName: roleTables.tableName,
+        accessMethod: roleTables.accessMethod,
+      })
+      .from(roleTables),
+    db
+      .select({
+        roleId: userRoles.roleId,
+        userId: userRoles.userId,
+      })
+      .from(userRoles),
+  ]);
 
   return allRoles.map((r) => ({
     ...r,

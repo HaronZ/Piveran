@@ -46,36 +46,36 @@ export async function getDashboardData(): Promise<DashboardData> {
   };
 
   try {
-    // Run queries sequentially to avoid Supabase connection pool exhaustion
-    const partsCount = await db.select({ value: count() }).from(parts);
-    const customersCount = await db.select({ value: count() }).from(customers);
-    const carsCount = await db.select({ value: count() }).from(cars);
-    const vendorsCount = await db.select({ value: count() }).from(vendors);
-    const totalJOsResult = await db.select({ value: count() }).from(jobOrders);
+    // Bounded parallelism: batches of ~5 to avoid Supabase connection pool exhaustion.
+    const [partsCount, customersCount, carsCount, vendorsCount, totalJOsResult] = await Promise.all([
+      db.select({ value: count() }).from(parts),
+      db.select({ value: count() }).from(customers),
+      db.select({ value: count() }).from(cars),
+      db.select({ value: count() }).from(vendors),
+      db.select({ value: count() }).from(jobOrders),
+    ]);
 
-    const activeJOsResult = await db.select({ value: count() }).from(jobOrders)
-      .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5)));
-    const pendingPaymentJOsResult = await db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 6));
-    const completedJOsResult = await db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 7));
-    const cancelledJOsResult = await db.select({ value: count() }).from(jobOrders)
-      .where(eq(jobOrders.statusId, 8));
+    const [activeJOsResult, pendingPaymentJOsResult, completedJOsResult, cancelledJOsResult] = await Promise.all([
+      db.select({ value: count() }).from(jobOrders)
+        .where(and(gte(jobOrders.statusId, 1), lte(jobOrders.statusId, 5))),
+      db.select({ value: count() }).from(jobOrders).where(eq(jobOrders.statusId, 6)),
+      db.select({ value: count() }).from(jobOrders).where(eq(jobOrders.statusId, 7)),
+      db.select({ value: count() }).from(jobOrders).where(eq(jobOrders.statusId, 8)),
+    ]);
 
-    const pendingPRsResult = await db.select({ value: count() }).from(purchaseRequests)
-      .where(and(gte(purchaseRequests.statusId, 1), lte(purchaseRequests.statusId, 6)));
-    const waitingDeliveryPRsResult = await db.select({ value: count() }).from(purchaseRequests)
-      .where(eq(purchaseRequests.statusId, 5));
+    const [pendingPRsResult, waitingDeliveryPRsResult, revenueResult, invValue] = await Promise.all([
+      db.select({ value: count() }).from(purchaseRequests)
+        .where(and(gte(purchaseRequests.statusId, 1), lte(purchaseRequests.statusId, 6))),
+      db.select({ value: count() }).from(purchaseRequests).where(eq(purchaseRequests.statusId, 5)),
+      db.select({ total: sum(joPayments.amountPaid) }).from(joPayments),
+      db.select({ value: inventoryValue.currentValue, date: inventoryValue.date })
+        .from(inventoryValue)
+        .orderBy(sql`${inventoryValue.date} DESC NULLS LAST`)
+        .limit(1),
+    ]);
 
-    const revenueResult = await db.select({ total: sum(joPayments.amountPaid) }).from(joPayments);
-
-    const invValue = await db
-      .select({ value: inventoryValue.currentValue, date: inventoryValue.date })
-      .from(inventoryValue)
-      .orderBy(sql`${inventoryValue.date} DESC NULLS LAST`)
-      .limit(1);
-
-    const lowStockResult = await db.execute(sql`
+    const [lowStockResult, waitingPRNamesResult, monthlyRevenueResult, topBrandsResult] = await Promise.all([
+      db.execute(sql`
       SELECT p.name, 
              COALESCE(SUM(CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END), 0) as current_stock,
              COALESCE(p.critical_count, 0) as critical_count
@@ -86,15 +86,13 @@ export async function getDashboardData(): Promise<DashboardData> {
       HAVING COALESCE(SUM(CASE WHEN il.action_id IN (1,5) THEN il.quantity ELSE -il.quantity END), 0) <= p.critical_count
       ORDER BY current_stock ASC
       LIMIT 10
-    `);
-
-    const waitingPRNamesResult = await db
-      .select({ prNumber: purchaseRequests.prNumber })
-      .from(purchaseRequests)
-      .where(eq(purchaseRequests.statusId, 5))
-      .limit(5);
-
-    const monthlyRevenueResult = await db.execute(sql`
+    `),
+      db
+        .select({ prNumber: purchaseRequests.prNumber })
+        .from(purchaseRequests)
+        .where(eq(purchaseRequests.statusId, 5))
+        .limit(5),
+      db.execute(sql`
       SELECT TO_CHAR(date_trunc('month', jp.date_paid), 'Mon') as month,
              EXTRACT(MONTH FROM date_trunc('month', jp.date_paid)) as month_num,
              EXTRACT(YEAR FROM date_trunc('month', jp.date_paid)) as year_num,
@@ -104,16 +102,16 @@ export async function getDashboardData(): Promise<DashboardData> {
       GROUP BY date_trunc('month', jp.date_paid)
       ORDER BY year_num DESC, month_num DESC
       LIMIT 6
-    `);
-
-    const topBrandsResult = await db.execute(sql`
+    `),
+      db.execute(sql`
       SELECT b.name, COUNT(p.id) as part_count
       FROM brands b
       JOIN parts p ON p.brand_id = b.id
       GROUP BY b.id, b.name
       ORDER BY part_count DESC
       LIMIT 5
-    `);
+    `),
+    ]);
 
     const activeJOs = activeJOsResult[0]?.value ?? 0;
     const pendingPaymentJOs = pendingPaymentJOsResult[0]?.value ?? 0;
