@@ -176,7 +176,7 @@ export async function getJoPayments(joId: string): Promise<JoPaymentRow[]> {
 export type LaborTypeRow = { id: string; name: string; defaultPrice: string | null };
 export type JoMaterialStatusRow = { id: number; status: string };
 export type JoLaborStatusRow = { id: number; status: string };
-export type CashierRow = { id: string; name: string };
+export type { CashierSelectorRow as CashierRow } from "@/lib/db/queries/cashiers";
 
 export async function getLaborTypes(): Promise<LaborTypeRow[]> {
   return db
@@ -197,15 +197,7 @@ export async function getJoLaborStatuses(): Promise<JoLaborStatusRow[]> {
   return db.select().from(joLaborStatuses);
 }
 
-export async function getCashiers(): Promise<CashierRow[]> {
-  const rows = await db
-    .select({
-      id: cashiers.id,
-      name: sql<string>`concat_ws(' ', ${cashiers.firstName}, ${cashiers.lastName})`.as("name"),
-    })
-    .from(cashiers);
-  return rows;
-}
+export { getCashiersForSelector as getCashiers } from "@/lib/db/queries/cashiers";
 
 // ─── JO Labor Mechanics ───
 export type JoLaborMechanicRow = {
