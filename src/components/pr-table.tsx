@@ -51,6 +51,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { PrDialog } from "@/components/pr-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
 import { deletePurchaseRequest } from "@/lib/actions/purchase-requests";
+import { useActionParam } from "@/lib/hooks/use-action-param";
 import type { PurchaseRequestRow, PrStatusOption } from "@/lib/db/queries/purchase-requests";
 
 type SortKey = "prNumber" | "date" | "statusName" | "lineCount" | "totalAmount";
@@ -106,6 +107,8 @@ export function PrTable({
   const [addOpen, setAddOpen] = useState(false);
   const [editPr, setEditPr] = useState<PurchaseRequestRow | null>(null);
   const [deletingPr, setDeletingPr] = useState<PurchaseRequestRow | null>(null);
+
+  useActionParam(() => setAddOpen(true));
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {

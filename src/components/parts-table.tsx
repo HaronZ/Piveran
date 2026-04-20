@@ -59,6 +59,7 @@ import { PriceHistoryDrawer } from "@/components/price-history-drawer";
 import { fetchPartPriceHistory } from "@/lib/actions/price-history";
 import { Images } from "lucide-react";
 import { deletePart } from "@/lib/actions/parts";
+import { useActionParam } from "@/lib/hooks/use-action-param";
 import type {
   PartRow,
   BrandOption,
@@ -93,6 +94,8 @@ export function PartsTable({ parts, brands, cabinetCodes, vendors }: PartsTableP
   const [photosPart, setPhotosPart] = useState<PartRow | null>(null);
   const [historyPart, setHistoryPart] = useState<PartRow | null>(null);
   const [suppliersPart, setSuppliersPart] = useState<PartRow | null>(null);
+
+  useActionParam(() => setAddOpen(true));
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {

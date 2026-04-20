@@ -471,21 +471,21 @@ async function DashboardContent() {
               <QuickAction
                 title="Add New Part"
                 description="Add to inventory"
-                href="/dashboard/parts"
+                href="/dashboard/parts?action=new"
                 icon={Package}
                 color="bg-amber-500/10 text-amber-500"
               />
               <QuickAction
                 title="Create Purchase Request"
                 description="Order from vendors"
-                href="/dashboard/purchase-requests"
+                href="/dashboard/purchase-requests?action=new"
                 icon={ShoppingCart}
                 color="bg-purple-500/10 text-purple-500"
               />
               <QuickAction
                 title="Record Stock Movement"
                 description="Log in/out"
-                href="/dashboard/stock-log"
+                href="/dashboard/stock-log?action=new"
                 icon={Activity}
                 color="bg-emerald-500/10 text-emerald-500"
               />
