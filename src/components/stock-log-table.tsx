@@ -58,6 +58,7 @@ import type {
   PaymentTypeOption,
 } from "@/lib/db/queries/stock-log";
 import type { PartOption, VendorOption } from "@/lib/db/queries/purchase-requests";
+import { useActionParam } from "@/lib/hooks/use-action-param";
 
 type SortKey = "date" | "partName" | "actionName" | "quantity" | "totalPrice";
 type SortDir = "asc" | "desc";
@@ -109,6 +110,8 @@ export function StockLogTable({
   const [addOpen, setAddOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<StockLogRow | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<StockLogRow | null>(null);
+
+  useActionParam(() => setAddOpen(true));
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {

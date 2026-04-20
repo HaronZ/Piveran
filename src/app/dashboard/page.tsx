@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Activity,
   BarChart3,
+  ChevronRight,
 } from "lucide-react";
 import {
   Card,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardData } from "@/lib/db/queries/dashboard";
+import { getCurrentUserDisplayName } from "@/lib/auth/actions";
 import {
   RevenueChart,
   JOStatusChart,
@@ -175,9 +177,13 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             {getGreeting()},{" "}
-            <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-              Sir Keith
-            </span>{" "}
+            <Suspense
+              fallback={
+                <span className="inline-block h-7 w-32 rounded bg-muted/40 align-middle animate-pulse" />
+              }
+            >
+              <UserNameGradient />
+            </Suspense>{" "}
             👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -186,7 +192,14 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Activity className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
-          <span>Live data from Supabase</span>
+          <span>
+            Updated{" "}
+            {new Date().toLocaleTimeString("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </span>
         </div>
       </div>
 
@@ -195,6 +208,15 @@ export default function DashboardPage() {
         <DashboardContent />
       </Suspense>
     </div>
+  );
+}
+
+async function UserNameGradient() {
+  const name = await getCurrentUserDisplayName();
+  return (
+    <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+      {name}
+    </span>
   );
 }
 
@@ -255,6 +277,7 @@ async function DashboardContent() {
           description="All-time from JO payments"
           icon={DollarSign}
           variant="success"
+          href="/dashboard/income-statement"
         />
         <StatCard
           title="Active Job Orders"
@@ -328,6 +351,7 @@ async function DashboardContent() {
           }
           icon={TrendingUp}
           variant="success"
+          href="/dashboard/parts"
         />
       </div>
 
@@ -447,21 +471,21 @@ async function DashboardContent() {
               <QuickAction
                 title="Add New Part"
                 description="Add to inventory"
-                href="/dashboard/parts"
+                href="/dashboard/parts?action=new"
                 icon={Package}
                 color="bg-amber-500/10 text-amber-500"
               />
               <QuickAction
                 title="Create Purchase Request"
                 description="Order from vendors"
-                href="/dashboard/purchase-requests"
+                href="/dashboard/purchase-requests?action=new"
                 icon={ShoppingCart}
                 color="bg-purple-500/10 text-purple-500"
               />
               <QuickAction
                 title="Record Stock Movement"
                 description="Log in/out"
-                href="/dashboard/stock-log"
+                href="/dashboard/stock-log?action=new"
                 icon={Activity}
                 color="bg-emerald-500/10 text-emerald-500"
               />
@@ -486,53 +510,71 @@ async function DashboardContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               {lowStockCount > 0 && (
-                <Card className="border-red-500/20 bg-red-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {lowStockCount} Low Stock Item{lowStockCount > 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {topLowStock.map((p) => p.name).join(", ")}
-                        {lowStockCount > 3 && ` +${lowStockCount - 3} more`}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/parts"
+                  className="block group"
+                >
+                  <Card className="border-red-500/20 bg-red-500/5 transition-all hover:bg-red-500/10 hover:border-red-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {lowStockCount} Low Stock Item{lowStockCount > 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                          {topLowStock.map((p) => p.name).join(", ")}
+                          {lowStockCount > 3 && ` +${lowStockCount - 3} more`}
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-red-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {data.waitingDeliveryPRNames.length > 0 && (
-                <Card className="border-amber-500/20 bg-amber-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <ShoppingCart className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {data.waitingDeliveryPRNames.length} PR
-                        {data.waitingDeliveryPRNames.length > 1 ? "s" : ""}{" "}
-                        Awaiting Delivery
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {data.waitingDeliveryPRNames.join(", ")}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/purchase-requests"
+                  className="block group"
+                >
+                  <Card className="border-amber-500/20 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:border-amber-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <ShoppingCart className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {data.waitingDeliveryPRNames.length} PR
+                          {data.waitingDeliveryPRNames.length > 1 ? "s" : ""}{" "}
+                          Awaiting Delivery
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                          {data.waitingDeliveryPRNames.join(", ")}
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {data.pendingPaymentJOs > 0 && (
-                <Card className="border-blue-500/20 bg-blue-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <DollarSign className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {data.pendingPaymentJOs} Pending Payment
-                        {data.pendingPaymentJOs > 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Job orders waiting for payment.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/job-orders"
+                  className="block group"
+                >
+                  <Card className="border-blue-500/20 bg-blue-500/5 transition-all hover:bg-blue-500/10 hover:border-blue-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <DollarSign className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {data.pendingPaymentJOs} Pending Payment
+                          {data.pendingPaymentJOs > 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Job orders waiting for payment.
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-blue-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {lowStockCount === 0 &&
                 data.waitingDeliveryPRNames.length === 0 &&
