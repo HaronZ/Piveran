@@ -198,7 +198,15 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     {lt.defaultPrice ? (
-                      <span className="font-mono text-sm font-semibold text-green-500">{fmt(lt.defaultPrice)}</span>
+                      <button
+                        type="button"
+                        onClick={() => setHistoryItem(lt)}
+                        title="View price history"
+                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 -mr-2 font-mono text-sm font-semibold text-green-500 hover:bg-green-500/10 hover:underline underline-offset-2 decoration-dotted transition-colors cursor-pointer"
+                      >
+                        {fmt(lt.defaultPrice)}
+                        <History className="h-3 w-3 opacity-50" />
+                      </button>
                     ) : (
                       <span className="text-xs text-muted-foreground">No price set</span>
                     )}

@@ -414,7 +414,15 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                       {/* Price */}
                       <TableCell className="text-sm text-right font-medium tabular-nums">
                         {part.latestPrice !== null ? (
-                          formatCurrency(part.latestPrice)
+                          <button
+                            type="button"
+                            onClick={() => setHistoryPart(part)}
+                            title="View price history"
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 -mr-2 hover:bg-amber-500/10 hover:underline underline-offset-2 decoration-dotted transition-colors cursor-pointer"
+                          >
+                            {formatCurrency(part.latestPrice)}
+                            <History className="h-3 w-3 opacity-50" />
+                          </button>
                         ) : (
                           <span className="text-muted-foreground/30">—</span>
                         )}
