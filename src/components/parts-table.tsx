@@ -47,11 +47,14 @@ import {
   AlertTriangle,
   X,
   Filter,
+  History,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PartDialog } from "@/components/part-dialog";
 import { PartPhotosDialog } from "@/components/part-photos-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
+import { PriceHistoryDrawer } from "@/components/price-history-drawer";
+import { fetchPartPriceHistory } from "@/lib/actions/price-history";
 import { Images } from "lucide-react";
 import { deletePart } from "@/lib/actions/parts";
 import type {
@@ -84,6 +87,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
   const [editPart, setEditPart] = useState<PartRow | null>(null);
   const [deletingPart, setDeletingPart] = useState<PartRow | null>(null);
   const [photosPart, setPhotosPart] = useState<PartRow | null>(null);
+  const [historyPart, setHistoryPart] = useState<PartRow | null>(null);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -446,6 +450,13 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => setHistoryPart(part)}
+                              className="gap-2 text-sm"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                              Price history
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => setDeletingPart(part)}
                               className="gap-2 text-sm text-red-500 focus:text-red-500"
                             >
@@ -562,6 +573,17 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
           }
         }}
       />
+
+      {/* Price History */}
+      {historyPart && (
+        <PriceHistoryDrawer
+          open={!!historyPart}
+          onOpenChange={(o) => { if (!o) setHistoryPart(null); }}
+          title={`Price history · ${historyPart.name}`}
+          subtitle={historyPart.partNumber ? `Part # ${historyPart.partNumber}` : undefined}
+          fetchHistory={() => fetchPartPriceHistory(historyPart.id)}
+        />
+      )}
     </div>
     </TooltipProvider>
   );
