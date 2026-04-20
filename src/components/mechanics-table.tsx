@@ -22,6 +22,7 @@ import { MechanicDialog } from "@/components/mechanic-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
 import { deleteMechanic } from "@/lib/actions/mechanics";
 import type { MechanicRow } from "@/lib/db/queries/mechanics";
+import type { SkillSelectorRow } from "@/lib/db/queries/skills";
 
 type SortKey = "name" | "jobsCount" | "createdAt";
 type SortDir = "asc" | "desc";
@@ -29,9 +30,10 @@ const PAGE_SIZE = 20;
 
 interface MechanicsTableProps {
   mechanics: MechanicRow[];
+  allSkills: SkillSelectorRow[];
 }
 
-export function MechanicsTable({ mechanics }: MechanicsTableProps) {
+export function MechanicsTable({ mechanics, allSkills }: MechanicsTableProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -150,6 +152,7 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
               </TableHead>
               <TableHead className="hidden md:table-cell">Nickname</TableHead>
               <TableHead className="hidden md:table-cell">Contact</TableHead>
+              <TableHead className="hidden lg:table-cell">Skills</TableHead>
               <TableHead className="cursor-pointer select-none text-center" onClick={() => toggleSort("jobsCount")}>
                 <div className="flex items-center justify-center">Jobs <SortIndicator active={sortKey === "jobsCount"} dir={sortDir} variant="teal" /></div>
               </TableHead>
@@ -159,7 +162,7 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
           <TableBody>
             {paged.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="p-0">
+                <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     icon={Wrench}
                     title={search ? "No mechanics match your search" : "No mechanics yet"}
@@ -202,6 +205,24 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {m.skills.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1 max-w-[240px]">
+                        {m.skills.slice(0, 3).map((s) => (
+                          <Badge key={s.id} variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]">
+                            {s.skill}
+                          </Badge>
+                        ))}
+                        {m.skills.length > 3 && (
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground text-[10px]">
+                            +{m.skills.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-center">
@@ -250,9 +271,9 @@ export function MechanicsTable({ mechanics }: MechanicsTableProps) {
       )}
 
       {/* Dialogs */}
-      <MechanicDialog open={addOpen} onOpenChange={setAddOpen} />
+      <MechanicDialog open={addOpen} onOpenChange={setAddOpen} allSkills={allSkills} />
       {editMech && (
-        <MechanicDialog open={!!editMech} onOpenChange={(o) => { if (!o) setEditMech(null); }} mechanic={editMech} />
+        <MechanicDialog open={!!editMech} onOpenChange={(o) => { if (!o) setEditMech(null); }} mechanic={editMech} allSkills={allSkills} />
       )}
       {deletingMech && (
         <DeleteDialog
