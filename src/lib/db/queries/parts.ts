@@ -1,10 +1,12 @@
 import { db } from "@/lib/db";
-import { sql, eq, desc } from "drizzle-orm";
+import { sql, eq, desc, asc } from "drizzle-orm";
 import {
   parts,
   brands,
   cabinetCodes,
   partsPhotos,
+  partsSuppliers,
+  vendors,
 } from "@/lib/db/schema/vendor";
 
 export type PartPhotoRow = {
@@ -124,6 +126,44 @@ export async function getBrandsForFilter(): Promise<BrandOption[]> {
     .from(brands)
     .orderBy(brands.name);
   return rows;
+}
+
+export type PartSupplierRow = {
+  id: string;
+  partId: string;
+  vendorId: string;
+  vendorName: string;
+  price: string | null;
+  comment: string | null;
+  link: string | null;
+  lastUpdate: string | null;
+};
+
+export async function getPartSuppliers(partId: string): Promise<PartSupplierRow[]> {
+  const rows = await db
+    .select({
+      id: partsSuppliers.id,
+      partId: partsSuppliers.partId,
+      vendorId: partsSuppliers.vendorId,
+      vendorName: vendors.name,
+      price: partsSuppliers.price,
+      comment: partsSuppliers.comment,
+      link: partsSuppliers.link,
+      lastUpdate: sql<string>`${partsSuppliers.lastUpdate}`.as("last_update"),
+    })
+    .from(partsSuppliers)
+    .innerJoin(vendors, eq(partsSuppliers.vendorId, vendors.id))
+    .where(eq(partsSuppliers.partId, partId))
+    .orderBy(asc(partsSuppliers.price));
+  return rows.map((r) => ({ ...r, vendorName: r.vendorName ?? "" }));
+}
+
+export type VendorOption = { id: string; name: string };
+export async function getVendorsForSelector(): Promise<VendorOption[]> {
+  return db
+    .select({ id: vendors.id, name: vendors.name })
+    .from(vendors)
+    .orderBy(vendors.name);
 }
 
 export async function getCabinetCodes(): Promise<CabinetCodeOption[]> {
