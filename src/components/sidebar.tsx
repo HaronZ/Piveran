@@ -22,6 +22,7 @@ import {
   HardHat,
   Sparkles,
   ListChecks,
+  ClipboardCheck,
   FileBarChart,
   Loader2,
   X,
@@ -58,6 +59,7 @@ const navigation = [
       { name: "Skills", href: "/dashboard/skills", icon: Sparkles },
       { name: "Cashiers", href: "/dashboard/cashiers", icon: Banknote },
       { name: "Services", href: "/dashboard/services", icon: ListChecks },
+      { name: "Checklists", href: "/dashboard/checklists", icon: ClipboardCheck },
     ],
   },
   {
