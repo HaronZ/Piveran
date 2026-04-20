@@ -191,7 +191,14 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Activity className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
-          <span>Live data from Supabase</span>
+          <span>
+            Updated{" "}
+            {new Date().toLocaleTimeString("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </span>
         </div>
       </div>
 
