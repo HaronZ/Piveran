@@ -412,12 +412,14 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
       {/* Add Dialog */}
       <VendorDialog open={addOpen} onOpenChange={setAddOpen} />
 
-      {/* Edit Dialog */}
-      <VendorDialog
-        open={!!editVendor}
-        onOpenChange={(open) => !open && setEditVendor(null)}
-        vendor={editVendor}
-      />
+      {/* Edit Dialog — conditionally mounted so defaultValue inputs always see a real record */}
+      {editVendor && (
+        <VendorDialog
+          open={true}
+          onOpenChange={(open) => !open && setEditVendor(null)}
+          vendor={editVendor}
+        />
+      )}
 
       {/* Delete Dialog */}
       <DeleteDialog
