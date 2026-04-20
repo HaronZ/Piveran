@@ -125,8 +125,11 @@ export async function getDashboardData(): Promise<DashboardData> {
       { status: "Cancelled", count: cancelledJOs, color: "#ef4444" },
     ].filter((s) => s.count > 0);
 
-    const monthlyRevenue = (monthlyRevenueResult as unknown as { month: string; revenue: unknown }[])
-      .map((r) => ({ month: r.month, revenue: Number(r.revenue) }))
+    const monthlyRevenue = (monthlyRevenueResult as unknown as { month: string; year_num: number; revenue: unknown }[])
+      .map((r) => ({
+        month: `${r.month} '${String(r.year_num).slice(-2)}`,
+        revenue: Number(r.revenue),
+      }))
       .reverse();
 
     const topBrands = (topBrandsResult as unknown as { name: string; part_count: unknown }[]).map((r) => ({
