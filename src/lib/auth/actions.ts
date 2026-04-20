@@ -59,6 +59,29 @@ export const getCurrentUserId = cache(async (): Promise<string | null> => {
   return rows[0]?.id ?? null;
 });
 
+export const getCurrentUserDisplayName = cache(async (): Promise<string> => {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser?.email) return "there";
+
+  const rows = await db
+    .select({
+      firstName: users.firstName,
+      nickName: users.nickName,
+    })
+    .from(users)
+    .where(eq(users.email, authUser.email))
+    .limit(1);
+
+  const row = rows[0];
+  if (row?.nickName) return row.nickName;
+  if (row?.firstName) return row.firstName;
+
+  return authUser.email.split("@")[0];
+});
+
 export async function requireUserId(): Promise<string> {
   const id = await getCurrentUserId();
   if (!id) throw new Error("Not authenticated or user record missing");

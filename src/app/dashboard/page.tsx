@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardData } from "@/lib/db/queries/dashboard";
+import { getCurrentUserDisplayName } from "@/lib/auth/actions";
 import {
   RevenueChart,
   JOStatusChart,
@@ -175,9 +176,13 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             {getGreeting()},{" "}
-            <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-              Sir Keith
-            </span>{" "}
+            <Suspense
+              fallback={
+                <span className="inline-block h-7 w-32 rounded bg-muted/40 align-middle animate-pulse" />
+              }
+            >
+              <UserNameGradient />
+            </Suspense>{" "}
             👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -195,6 +200,15 @@ export default function DashboardPage() {
         <DashboardContent />
       </Suspense>
     </div>
+  );
+}
+
+async function UserNameGradient() {
+  const name = await getCurrentUserDisplayName();
+  return (
+    <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+      {name}
+    </span>
   );
 }
 
