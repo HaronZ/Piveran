@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DeleteDialog } from "@/components/delete-dialog";
 import {
   Loader2, Plus, Pencil, Trash2, Store, ExternalLink, Crown, X,
@@ -92,6 +95,7 @@ export function PartSuppliersDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl border-border/40 bg-card/95 backdrop-blur-xl">
+      <TooltipProvider>
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             <Store className="h-5 w-5 text-amber-500" />
@@ -200,24 +204,38 @@ export function PartSuppliersDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => { setShowAdd(false); setEditing(r); }}
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-500"
-                        onClick={() => setDeleteId(r.id)}
-                        title="Remove"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => { setShowAdd(false); setEditing(r); }}
+                              aria-label="Edit vendor price"
+                            />
+                          }
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </TooltipTrigger>
+                        <TooltipContent>Edit price</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-red-500 hover:text-red-500"
+                              onClick={() => setDeleteId(r.id)}
+                              aria-label="Remove vendor price"
+                            />
+                          }
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </TooltipTrigger>
+                        <TooltipContent>Remove vendor</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 );
@@ -225,6 +243,7 @@ export function PartSuppliersDialog({
             )}
           </div>
         </div>
+      </TooltipProvider>
       </DialogContent>
 
       <DeleteDialog

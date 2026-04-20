@@ -302,13 +302,14 @@ export function PartsTable({ parts, brands, cabinetCodes, vendors }: PartsTableP
                     <SortIndicator active={sortKey === "latestPrice"} dir={sortDir} variant="amber" />
                   </div>
                 </TableHead>
+                <TableHead className="text-xs w-[100px] text-center">Vendors</TableHead>
                 <TableHead className="text-xs w-[50px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="p-0">
+                  <TableCell colSpan={8} className="p-0">
                     <EmptyState
                       icon={Package}
                       title="No parts found"
@@ -431,6 +432,25 @@ export function PartsTable({ parts, brands, cabinetCodes, vendors }: PartsTableP
                         ) : (
                           <span className="text-muted-foreground/30">—</span>
                         )}
+                      </TableCell>
+
+                      {/* Vendors */}
+                      <TableCell className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => setSuppliersPart(part)}
+                          title={part.vendorCount > 0 ? "Compare vendor prices" : "Add vendor prices"}
+                          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                            part.vendorCount > 0
+                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
+                              : "text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground border border-dashed border-border/40"
+                          }`}
+                        >
+                          <Store className="h-3 w-3" />
+                          {part.vendorCount > 0
+                            ? `${part.vendorCount} vendor${part.vendorCount > 1 ? "s" : ""}`
+                            : "Add"}
+                        </button>
                       </TableCell>
 
                       {/* Actions */}

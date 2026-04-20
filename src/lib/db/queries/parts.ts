@@ -45,6 +45,7 @@ export interface PartRow {
   includeCritical: boolean;
   currentStock: number;
   latestPrice: number | null;
+  vendorCount: number;
   createdAt: string | null;
 }
 
@@ -74,6 +75,7 @@ export async function getParts(): Promise<PartRow[]> {
       COALESCE(p.include_critical, false) AS "includeCritical",
       COALESCE(stock.current_stock, 0) AS "currentStock",
       latest_price.price AS "latestPrice",
+      COALESCE(vendor_stats.cnt, 0) AS "vendorCount",
       p.created_at       AS "createdAt"
     FROM parts p
     LEFT JOIN brands b ON b.id = p.brand_id
@@ -92,14 +94,20 @@ export async function getParts(): Promise<PartRow[]> {
       ORDER BY pp.date DESC NULLS LAST
       LIMIT 1
     ) latest_price ON true
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS cnt
+      FROM parts_suppliers ps
+      WHERE ps.part_id = p.id
+    ) vendor_stats ON true
     ORDER BY p.name ASC
   `);
 
-  type Raw = Omit<PartRow, "criticalCount" | "includeCritical" | "currentStock" | "latestPrice" | "createdAt"> & {
+  type Raw = Omit<PartRow, "criticalCount" | "includeCritical" | "currentStock" | "latestPrice" | "vendorCount" | "createdAt"> & {
     criticalCount: unknown;
     includeCritical: unknown;
     currentStock: unknown;
     latestPrice: unknown;
+    vendorCount: unknown;
     createdAt: unknown;
   };
   return (rows as unknown as Raw[]).map((r) => ({
@@ -116,6 +124,7 @@ export async function getParts(): Promise<PartRow[]> {
     includeCritical: Boolean(r.includeCritical),
     currentStock: Number(r.currentStock),
     latestPrice: r.latestPrice ? Number(r.latestPrice) : null,
+    vendorCount: Number(r.vendorCount),
     createdAt: r.createdAt ? String(r.createdAt) : null,
   }));
 }
