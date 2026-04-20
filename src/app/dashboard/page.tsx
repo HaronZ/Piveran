@@ -162,7 +162,13 @@ function QuickAction({
 
 // ── Greeting ──
 function getGreeting(): string {
-  const hour = new Date().getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-PH", {
+      timeZone: "Asia/Manila",
+      hour: "numeric",
+      hour12: false,
+    }).format(new Date()),
+  );
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
@@ -195,6 +201,7 @@ export default function DashboardPage() {
           <span>
             Updated{" "}
             {new Date().toLocaleTimeString("en-PH", {
+              timeZone: "Asia/Manila",
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
