@@ -21,10 +21,12 @@ import {
   Search, Plus, MoreHorizontal, Pencil, Trash2, Wrench,
   ArrowUpDown, ArrowUp, ArrowDown, Loader2, DollarSign,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ListChecks, Hash,
+  ListChecks, Hash, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteDialog } from "@/components/delete-dialog";
+import { PriceHistoryDrawer } from "@/components/price-history-drawer";
+import { fetchLaborPriceHistory } from "@/lib/actions/price-history";
 import { createLaborType, updateLaborType, deleteLaborType } from "@/lib/actions/service-catalog";
 import type { LaborTypeFullRow } from "@/lib/db/queries/service-catalog";
 
@@ -51,6 +53,7 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LaborTypeFullRow | null>(null);
   const [delItem, setDelItem] = useState<LaborTypeFullRow | null>(null);
+  const [historyItem, setHistoryItem] = useState<LaborTypeFullRow | null>(null);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -214,6 +217,9 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
                         <DropdownMenuItem onClick={() => setEditItem(lt)}>
                           <Pencil className="h-4 w-4 mr-2" /> Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setHistoryItem(lt)}>
+                          <History className="h-4 w-4 mr-2" /> Price history
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDelItem(lt)}
                           className="text-red-500 focus:text-red-500"
@@ -262,6 +268,15 @@ export function ServiceCatalogTable({ laborTypes }: ServiceCatalogTableProps) {
           title="Delete Service"
           description={`Are you sure you want to delete "${delItem.name}"? This cannot be undone.`}
           onConfirm={async () => { await deleteLaborType(delItem.id); }}
+        />
+      )}
+      {historyItem && (
+        <PriceHistoryDrawer
+          open={!!historyItem}
+          onOpenChange={(o) => { if (!o) setHistoryItem(null); }}
+          title={`Price history · ${historyItem.name}`}
+          subtitle="All recorded labor-price changes"
+          fetchHistory={() => fetchLaborPriceHistory(historyItem.id)}
         />
       )}
     </div>
