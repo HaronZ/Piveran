@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { DataTableSkeleton } from "@/components/data-table-skeleton";
 import { MechanicsTable } from "@/components/mechanics-table";
 import { getMechanics } from "@/lib/db/queries/mechanics";
+import { getSkillsForSelector } from "@/lib/db/queries/skills";
 
 export default function MechanicsPage() {
   return (
@@ -19,6 +20,9 @@ export default function MechanicsPage() {
 }
 
 async function MechanicsData() {
-  const mechanics = await getMechanics();
-  return <MechanicsTable mechanics={mechanics} />;
+  const [mechanics, allSkills] = await Promise.all([
+    getMechanics(),
+    getSkillsForSelector(),
+  ]);
+  return <MechanicsTable mechanics={mechanics} allSkills={allSkills} />;
 }

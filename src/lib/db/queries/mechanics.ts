@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
-import { mechanics, joLaborMechanics } from "@/lib/db/schema/garage";
-import { eq, sql, asc } from "drizzle-orm";
+import { mechanics, joLaborMechanics, mechanicSkills, skills } from "@/lib/db/schema/garage";
+import { eq, sql, asc, inArray } from "drizzle-orm";
+
+export type MechanicSkillBadge = { id: string; skill: string };
 
 export type MechanicRow = {
   id: string;
@@ -10,6 +12,7 @@ export type MechanicRow = {
   primaryContact: string | null;
   jobsCount: number;
   createdAt: string | null;
+  skills: MechanicSkillBadge[];
 };
 
 export async function getMechanics(): Promise<MechanicRow[]> {
@@ -28,9 +31,32 @@ export async function getMechanics(): Promise<MechanicRow[]> {
     .groupBy(mechanics.id)
     .orderBy(asc(mechanics.firstName));
 
+  const mechanicIds = rows.map((r) => r.id);
+  let skillRows: { mechanicId: string; id: string; skill: string }[] = [];
+  if (mechanicIds.length > 0) {
+    skillRows = await db
+      .select({
+        mechanicId: mechanicSkills.mechanicId,
+        id: skills.id,
+        skill: skills.skill,
+      })
+      .from(mechanicSkills)
+      .innerJoin(skills, eq(mechanicSkills.skillId, skills.id))
+      .where(inArray(mechanicSkills.mechanicId, mechanicIds))
+      .orderBy(asc(skills.skill));
+  }
+
+  const skillsByMechanic = new Map<string, MechanicSkillBadge[]>();
+  for (const s of skillRows) {
+    const list = skillsByMechanic.get(s.mechanicId) ?? [];
+    list.push({ id: s.id, skill: s.skill });
+    skillsByMechanic.set(s.mechanicId, list);
+  }
+
   return rows.map((r) => ({
     ...r,
     jobsCount: Number(r.jobsCount),
+    skills: skillsByMechanic.get(r.id) ?? [],
   }));
 }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { mechanics } from "@/lib/db/schema/garage";
+import { mechanics, mechanicSkills } from "@/lib/db/schema/garage";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -16,6 +16,16 @@ const schema = z.object({
 
 export type MechanicFormState = { success?: boolean; error?: string };
 
+function getSkillIdsFromForm(formData: FormData): string[] {
+  const ids: string[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("skill_") && value === "on") {
+      ids.push(key.replace("skill_", ""));
+    }
+  }
+  return ids;
+}
+
 export async function createMechanic(
   _prev: MechanicFormState,
   formData: FormData
@@ -25,14 +35,25 @@ export async function createMechanic(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const userId = await requireUserId();
-  await db.insert(mechanics).values({
-    firstName: parsed.data.firstName,
-    lastName: parsed.data.lastName || null,
-    nickName: parsed.data.nickName || null,
-    primaryContact: parsed.data.primaryContact || null,
-    createdBy: userId,
-    updatedBy: userId,
-  });
+  const inserted = await db
+    .insert(mechanics)
+    .values({
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName || null,
+      nickName: parsed.data.nickName || null,
+      primaryContact: parsed.data.primaryContact || null,
+      createdBy: userId,
+      updatedBy: userId,
+    })
+    .returning({ id: mechanics.id });
+
+  const newId = inserted[0]?.id;
+  const skillIds = getSkillIdsFromForm(formData);
+  if (newId && skillIds.length > 0) {
+    await db.insert(mechanicSkills).values(
+      skillIds.map((skillId) => ({ mechanicId: newId, skillId, createdBy: userId }))
+    );
+  }
 
   revalidatePath("/dashboard/mechanics");
   return { success: true };
@@ -59,6 +80,14 @@ export async function updateMechanic(
       updatedBy: userId,
     })
     .where(eq(mechanics.id, id));
+
+  const skillIds = getSkillIdsFromForm(formData);
+  await db.delete(mechanicSkills).where(eq(mechanicSkills.mechanicId, id));
+  if (skillIds.length > 0) {
+    await db.insert(mechanicSkills).values(
+      skillIds.map((skillId) => ({ mechanicId: id, skillId, createdBy: userId }))
+    );
+  }
 
   revalidatePath("/dashboard/mechanics");
   return { success: true };
