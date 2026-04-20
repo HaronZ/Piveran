@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Activity,
   BarChart3,
+  ChevronRight,
 } from "lucide-react";
 import {
   Card,
@@ -509,53 +510,71 @@ async function DashboardContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               {lowStockCount > 0 && (
-                <Card className="border-red-500/20 bg-red-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {lowStockCount} Low Stock Item{lowStockCount > 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {topLowStock.map((p) => p.name).join(", ")}
-                        {lowStockCount > 3 && ` +${lowStockCount - 3} more`}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/parts"
+                  className="block group"
+                >
+                  <Card className="border-red-500/20 bg-red-500/5 transition-all hover:bg-red-500/10 hover:border-red-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {lowStockCount} Low Stock Item{lowStockCount > 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                          {topLowStock.map((p) => p.name).join(", ")}
+                          {lowStockCount > 3 && ` +${lowStockCount - 3} more`}
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-red-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {data.waitingDeliveryPRNames.length > 0 && (
-                <Card className="border-amber-500/20 bg-amber-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <ShoppingCart className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {data.waitingDeliveryPRNames.length} PR
-                        {data.waitingDeliveryPRNames.length > 1 ? "s" : ""}{" "}
-                        Awaiting Delivery
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {data.waitingDeliveryPRNames.join(", ")}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/purchase-requests"
+                  className="block group"
+                >
+                  <Card className="border-amber-500/20 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:border-amber-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <ShoppingCart className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {data.waitingDeliveryPRNames.length} PR
+                          {data.waitingDeliveryPRNames.length > 1 ? "s" : ""}{" "}
+                          Awaiting Delivery
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
+                          {data.waitingDeliveryPRNames.join(", ")}
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {data.pendingPaymentJOs > 0 && (
-                <Card className="border-blue-500/20 bg-blue-500/5">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <DollarSign className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {data.pendingPaymentJOs} Pending Payment
-                        {data.pendingPaymentJOs > 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Job orders waiting for payment.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href="/dashboard/job-orders"
+                  className="block group"
+                >
+                  <Card className="border-blue-500/20 bg-blue-500/5 transition-all hover:bg-blue-500/10 hover:border-blue-500/40">
+                    <CardContent className="flex items-start gap-3 p-4">
+                      <DollarSign className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {data.pendingPaymentJOs} Pending Payment
+                          {data.pendingPaymentJOs > 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Job orders waiting for payment.
+                        </p>
+                      </div>
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-blue-500/60 transition-transform group-hover:translate-x-0.5" />
+                    </CardContent>
+                  </Card>
+                </Link>
               )}
               {lowStockCount === 0 &&
                 data.waitingDeliveryPRNames.length === 0 &&
