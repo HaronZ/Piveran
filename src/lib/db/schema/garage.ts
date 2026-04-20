@@ -516,31 +516,6 @@ export const mechanicSkills = pgTable(
 );
 
 // ========================
-//  JO LABOR CHECKLIST CHECKS
-// ========================
-export const joLaborChecklistChecks = pgTable(
-  "jo_labor_checklist_checks",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    joLaborId: uuid("jo_labor_id")
-      .notNull()
-      .references(() => joLabors.id, { onDelete: "cascade" }),
-    checklistId: uuid("checklist_id")
-      .notNull()
-      .references(() => qualityChecklists.id),
-    checked: boolean("checked").default(false),
-    notes: text("notes"),
-    checkedAt: timestamp("checked_at", { withTimezone: true }),
-    checkedBy: uuid("checked_by").references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  },
-  (t) => [
-    index("jo_labor_checks_labor_idx").on(t.joLaborId),
-    index("jo_labor_checks_checklist_idx").on(t.checklistId),
-  ]
-);
-
-// ========================
 //  RELATIONS
 // ========================
 export const cashLogRelations = relations(cashLog, ({ one }) => ({
@@ -605,12 +580,6 @@ export const joLaborsRelations = relations(joLabors, ({ one, many }) => ({
   photos: many(joLaborPhotos),
   comments: many(joLaborComments),
   mechanics: many(joLaborMechanics),
-  checklistChecks: many(joLaborChecklistChecks),
-}));
-
-export const joLaborChecklistChecksRelations = relations(joLaborChecklistChecks, ({ one }) => ({
-  joLabor: one(joLabors, { fields: [joLaborChecklistChecks.joLaborId], references: [joLabors.id] }),
-  checklist: one(qualityChecklists, { fields: [joLaborChecklistChecks.checklistId], references: [qualityChecklists.id] }),
 }));
 
 export const joLaborMechanicsRelations = relations(joLaborMechanics, ({ one }) => ({
