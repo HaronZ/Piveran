@@ -3,12 +3,17 @@ import { getErrorMessage } from "@/lib/utils/errors";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { parts, partsPhotos } from "@/lib/db/schema/vendor";
+import { parts, partsPhotos, partsSuppliers } from "@/lib/db/schema/vendor";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUserId } from "@/lib/auth/actions";
 import { deleteMediaByUrl } from "@/lib/supabase/storage-server";
-import { getPartPhotos, type PartPhotoRow } from "@/lib/db/queries/parts";
+import {
+  getPartPhotos,
+  getPartSuppliers,
+  type PartPhotoRow,
+  type PartSupplierRow,
+} from "@/lib/db/queries/parts";
 
 const partSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -159,6 +164,85 @@ export async function deletePartPhoto(
     await deleteMediaByUrl([photoUrl]).catch(() => {});
   } catch (e) {
     return { error: getErrorMessage(e, "Failed to delete photo") };
+  }
+  revalidatePath("/dashboard/parts");
+  return { success: true };
+}
+
+// ─── Part Suppliers (vendor prices) ───
+const supplierSchema = z.object({
+  vendorId: z.string().uuid("Vendor is required"),
+  price: z.coerce.number().min(0, "Price must be ≥ 0").optional(),
+  link: z.string().optional(),
+  comment: z.string().optional(),
+});
+
+export async function listPartSuppliers(partId: string): Promise<PartSupplierRow[]> {
+  try {
+    return await getPartSuppliers(partId);
+  } catch {
+    return [];
+  }
+}
+
+export async function addPartSupplier(
+  partId: string,
+  input: { vendorId: string; price?: number; link?: string; comment?: string }
+): Promise<PartFormState> {
+  const parsed = supplierSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+  try {
+    const userId = await requireUserId();
+    await db.insert(partsSuppliers).values({
+      partId,
+      vendorId: parsed.data.vendorId,
+      price: parsed.data.price != null ? String(parsed.data.price) : null,
+      link: parsed.data.link?.trim() || null,
+      comment: parsed.data.comment?.trim() || null,
+      lastUpdate: new Date(),
+      createdBy: userId,
+    });
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to add vendor price") };
+  }
+  revalidatePath("/dashboard/parts");
+  return { success: true };
+}
+
+export async function updatePartSupplier(
+  id: string,
+  input: { vendorId: string; price?: number; link?: string; comment?: string }
+): Promise<PartFormState> {
+  const parsed = supplierSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid input" };
+  }
+  try {
+    await requireUserId();
+    await db
+      .update(partsSuppliers)
+      .set({
+        vendorId: parsed.data.vendorId,
+        price: parsed.data.price != null ? String(parsed.data.price) : null,
+        link: parsed.data.link?.trim() || null,
+        comment: parsed.data.comment?.trim() || null,
+        lastUpdate: new Date(),
+      })
+      .where(eq(partsSuppliers.id, id));
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to update vendor price") };
+  }
+  revalidatePath("/dashboard/parts");
+  return { success: true };
+}
+
+export async function deletePartSupplier(id: string): Promise<PartFormState> {
+  try {
+    await db.delete(partsSuppliers).where(eq(partsSuppliers.id, id));
+  } catch (e) {
+    return { error: getErrorMessage(e, "Failed to remove vendor price") };
   }
   revalidatePath("/dashboard/parts");
   return { success: true };

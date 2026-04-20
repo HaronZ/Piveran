@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { PartsTable } from "@/components/parts-table";
 import { DataTableSkeleton } from "@/components/data-table-skeleton";
-import { getParts, getBrandsForFilter, getCabinetCodes } from "@/lib/db/queries/parts";
+import { getParts, getBrandsForFilter, getCabinetCodes, getVendorsForSelector } from "@/lib/db/queries/parts";
 import { Activity } from "lucide-react";
 
 export const metadata = {
@@ -11,14 +11,15 @@ export const metadata = {
 };
 
 async function PartsContent() {
-  const [parts, brands, cabinetCodes] = await Promise.all([
+  const [parts, brands, cabinetCodes, vendors] = await Promise.all([
     getParts(),
     getBrandsForFilter(),
     getCabinetCodes(),
+    getVendorsForSelector(),
   ]);
 
   return (
-    <PartsTable parts={parts} brands={brands} cabinetCodes={cabinetCodes} />
+    <PartsTable parts={parts} brands={brands} cabinetCodes={cabinetCodes} vendors={vendors} />
   );
 }
 

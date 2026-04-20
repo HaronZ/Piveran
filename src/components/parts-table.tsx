@@ -48,10 +48,12 @@ import {
   X,
   Filter,
   History,
+  Store,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PartDialog } from "@/components/part-dialog";
 import { PartPhotosDialog } from "@/components/part-photos-dialog";
+import { PartSuppliersDialog } from "@/components/part-suppliers-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
 import { PriceHistoryDrawer } from "@/components/price-history-drawer";
 import { fetchPartPriceHistory } from "@/lib/actions/price-history";
@@ -61,6 +63,7 @@ import type {
   PartRow,
   BrandOption,
   CabinetCodeOption,
+  VendorOption,
 } from "@/lib/db/queries/parts";
 
 type SortKey = "name" | "currentStock" | "latestPrice" | "brandName";
@@ -72,9 +75,10 @@ interface PartsTableProps {
   parts: PartRow[];
   brands: BrandOption[];
   cabinetCodes: CabinetCodeOption[];
+  vendors: VendorOption[];
 }
 
-export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
+export function PartsTable({ parts, brands, cabinetCodes, vendors }: PartsTableProps) {
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("All");
   const [showCriticalOnly, setShowCriticalOnly] = useState(false);
@@ -88,6 +92,7 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
   const [deletingPart, setDeletingPart] = useState<PartRow | null>(null);
   const [photosPart, setPhotosPart] = useState<PartRow | null>(null);
   const [historyPart, setHistoryPart] = useState<PartRow | null>(null);
+  const [suppliersPart, setSuppliersPart] = useState<PartRow | null>(null);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -465,6 +470,13 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
                               Price history
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => setSuppliersPart(part)}
+                              className="gap-2 text-sm"
+                            >
+                              <Store className="h-3.5 w-3.5" />
+                              Vendor prices
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => setDeletingPart(part)}
                               className="gap-2 text-sm text-red-500 focus:text-red-500"
                             >
@@ -590,6 +602,18 @@ export function PartsTable({ parts, brands, cabinetCodes }: PartsTableProps) {
           title={`Price history · ${historyPart.name}`}
           subtitle={historyPart.partNumber ? `Part # ${historyPart.partNumber}` : undefined}
           fetchHistory={() => fetchPartPriceHistory(historyPart.id)}
+        />
+      )}
+
+      {/* Vendor Prices */}
+      {suppliersPart && (
+        <PartSuppliersDialog
+          open={!!suppliersPart}
+          onOpenChange={(o) => { if (!o) setSuppliersPart(null); }}
+          partId={suppliersPart.id}
+          partName={suppliersPart.name}
+          partNumber={suppliersPart.partNumber}
+          vendors={vendors}
         />
       )}
     </div>
