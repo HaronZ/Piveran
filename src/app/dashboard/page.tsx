@@ -269,6 +269,7 @@ async function DashboardContent() {
           description="All-time from JO payments"
           icon={DollarSign}
           variant="success"
+          href="/dashboard/income-statement"
         />
         <StatCard
           title="Active Job Orders"
@@ -342,6 +343,7 @@ async function DashboardContent() {
           }
           icon={TrendingUp}
           variant="success"
+          href="/dashboard/parts"
         />
       </div>
 
